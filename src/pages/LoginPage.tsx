@@ -18,21 +18,25 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false)
 
   const handleLogin = useCallback(async () => {
-    setLoading(true)
-    setError("")
-    try {
-      const res = await axios.post("http://localhost:3000/auth/login", { email, password })
-      const { token, user } = res.data
-      localStorage.setItem("token", token)
-      localStorage.setItem("id", user.id)
-      login()
-      navigate("/dashboard")
-    } catch {
-      setError("Credenciales incorrectas")
-    } finally {
-      setLoading(false)
-    }
-  }, [email, password, login, navigate])
+  setLoading(true)
+  setError("")
+  try {
+    const res = await axios.post("http://localhost:8000/api/auth/login", { email, password })
+
+    const { accessToken, userId } = res.data
+
+    localStorage.setItem("token", accessToken)
+    localStorage.setItem("id", userId)
+
+    login()
+    navigate("/dashboard")
+  } catch (err) {
+    console.log(err)
+    setError("Credenciales incorrectas")
+  } finally {
+    setLoading(false)
+  }
+}, [email, password, login, navigate])
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-900 p-4">

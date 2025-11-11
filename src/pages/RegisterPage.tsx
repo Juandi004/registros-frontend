@@ -15,15 +15,18 @@ const RegisterPage = () => {
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [roleId, setRoleId]=useState('')
+  const [careerId, setCareerId]=useState('')
 
   const handleRegister = async () => {
     try {
       setLoading(true)
-      const res = await axios.post('http://localhost:3000/user', {
+      const res = await axios.post('http://localhost:8000/api/users', {
         name,
-        age,
         email,
-        password
+        password,
+        roleId,
+        careerId
       })
       console.log('Usuario registrado', res.data)
       navigate("/login")
@@ -48,12 +51,11 @@ const RegisterPage = () => {
             className="bg-gray-700 text-white placeholder-gray-400 border-gray-600 focus:border-cyan-400 focus:ring-cyan-400"
           />
 
-          <Label htmlFor="age">Edad</Label>
+          <Label htmlFor="age">Rol</Label>
           <Input
-            type="number"
-            placeholder="Edad"
-            value={age}
-            onChange={(e) => setAge(e.target.valueAsNumber)}
+            placeholder="ADMIN"
+            value={roleId}
+            onChange={(e) => setRoleId(e.target.value)}
             className="bg-gray-700 text-white placeholder-gray-400 border-gray-600 focus:border-cyan-400 focus:ring-cyan-400"
           />
 
@@ -65,7 +67,14 @@ const RegisterPage = () => {
             onChange={(e) => setEmail(e.target.value)}
             className="bg-gray-700 text-white placeholder-gray-400 border-gray-600 focus:border-cyan-400 focus:ring-cyan-400"
           />
-
+          <Label>Carrera</Label>
+          <Input
+            type="carrera"
+            placeholder="Ingeniería en Sistemas Computacionales"
+            value={careerId}
+            onChange={(e) => setCareerId(e.target.value)}
+            className="bg-gray-700 text-white placeholder-gray-400 border-gray-600 focus:border-cyan-400 focus:ring-cyan-400"
+          />
           <Label htmlFor="password">Contraseña</Label>
           <div className="relative">
             <Input
