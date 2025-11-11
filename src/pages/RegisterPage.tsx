@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label"
 import axios from "axios"
 import { useNavigate } from "react-router-dom"
 import { Eye, EyeOff } from "lucide-react"
+import { Link } from "react-router-dom"
 
 const RegisterPage = () => {
   const navigate = useNavigate()
@@ -90,6 +91,12 @@ const RegisterPage = () => {
           >
             {loading ? "Cargando..." : "Registrarse"}
           </Button>
+          <p className="text-center text-sm text-gray-400">
+          ¿Ya tienes una cuenta?{" "}
+          <Link to="/login" className="text-cyan-400 hover:underline">
+            Iniciar Sesión
+          </Link>
+        </p>
         </div>
       </div>
     </>
