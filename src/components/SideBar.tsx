@@ -2,26 +2,30 @@ import { useEffect, useState } from "react"
 import { NavLink, useNavigate } from "react-router-dom"
 import axios from "axios"
 import { useAuthStore } from "@/store/authStore"
-import { Home, Film, Mail, User, LogOut, Menu } from "lucide-react"
+import { Home, User, Settings, LogOut, Menu } from "lucide-react"
+import avatar from "../assets/avatar.svg"
 
 const Sidebar = () => {
+
+  const userId = useAuthStore((s) => s.userId)
+  const user = useAuthStore((s) => s.user)
+  const setUser = useAuthStore((s) => s.setUser)
   const navigate = useNavigate()
   const isLogged = useAuthStore((s) => s.isLoggedIn)
   const logoutStore = useAuthStore((s) => s.logout)
+  const accesToken = localStorage.getItem("token")
 
-  const token = localStorage.getItem("token")
-  const id = Number(localStorage.getItem("id"))
+  const [open, setOpen] = useState(true)
 
-  const [user, setUser] = useState<any>(null)
-  const [open, setOpen] = useState(false) 
-  
   useEffect(() => {
-    if (!isLogged || !token || !id) return
+    if (!isLogged || !accesToken || !userId) return
     axios
-      .get(`http://localhost:3000/user/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+      .get(`http://localhost:8000/api/users/${userId}`, {
+        headers: { Authorization: `Bearer ${accesToken}` },
+      })
       .then((res) => setUser(res.data))
       .catch((err) => console.log(err))
-  }, [isLogged, id, token])
+  }, [isLogged, userId, accesToken, setUser])
 
   const handleLogout = () => {
     localStorage.removeItem("token")
@@ -34,74 +38,65 @@ const Sidebar = () => {
     <>
       <button
         onClick={() => setOpen(!open)}
-        className="fixed top-4 left-4 z-50 p-2 bg-gray-800 text-gray-200 rounded-md"
+        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-gray-800 text-gray-200 rounded-md"
       >
         <Menu className="w-6 h-6" />
       </button>
-
-  
-      <div
-        className={`fixed top-0 left-0 h-screen bg-gray-900 text-gray-100 shadow-xl transition-all duration-300 z-40
-          ${open ? "w-64" : "w-16"} 
-          transform ${open ? "translate-x-0" : "translate-x-0"}
-        `}
+      {open && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+          onClick={() => setOpen(false)}
+        ></div>
+      )}
+      <aside
+        className={`fixed top-0 left-0 h-full bg-gray-900 text-gray-100 shadow-xl transition-all duration-300 z-40 
+        ${open ? "translate-x-0" : "-translate-x-full"} w-64`}
       >
-        <div className="py-20 px-4 flex items-center justify-between">
-          <span className={`text-xl font-semibold ${open ? "inline" : "hidden"}`}>
-            Project Management
-          </span>
+        <div className="flex items-center justify-center py-6 border-b border-gray-800 gap-3">
+          <img src="https://cdn-icons-png.flaticon.com/512/4196/4196599.png" alt="icon" className="w-7 h-7 "/>
+          <h1 className="text-white font-bold text-xl">ThesisManager</h1>
         </div>
+
         {isLogged && user && (
-          <div
-            className={`flex items-center gap-3 px-3 py-2 mb-4 bg-gray-800 rounded-lg transition-all ${
-              open ? "opacity-100" : "opacity-0 h-0 overflow-hidden"
-            }`}
-          >
-            <img src={user.avatar} className="w-10 h-10 rounded-full object-cover" />
-            <div>
-              <p className="font-semibold">{user.name}</p>
-              <p className="text-sm text-gray-400">{user.email}</p>
-            </div>
+          <div className="flex flex-col items-center py-6 border-b border-gray-800">
+            <img src={avatar} className="w-14 h-14 rounded-full object-cover mb-2 bg-gray-700" />
+            <p className="font-semibold">{user.name}</p>
+            <p className="text-sm text-gray-400">{user.email}</p>
           </div>
         )}
 
-        <nav className="flex flex-col gap-1 px-2">
-          <NavItem to="/dashboard" icon={<Home />} label="Dashboard" open={open} />
-          <NavItem to="/movies" icon={<Film />} label="Movies" open={open} />
-          <NavItem to="/proyect" icon={<Mail />} label="Proyects" open={open} />
-          {isLogged && <NavItem to="/profile" icon={<User />} label="Profile" open={open} />}
+        <nav className="flex flex-col gap-1 p-3 mt-4">
+          <NavItem to="/dashboard" icon={<Home />} label="Dashboard" />
+          <NavItem to="/profile" icon={<User />} label="Perfil" />
+          <NavItem to="/proyects" icon={<Settings />} label="Proyectos" />
 
           {isLogged && (
             <button
               onClick={handleLogout}
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 text-red-400"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 text-red-400 mt-auto"
             >
               <LogOut className="w-5 h-5" />
-              <span className={`${open ? "inline" : "hidden"}`}>Cerrar Sesión</span>
+              <span>Cerrar Sesión</span>
             </button>
           )}
-
-          {!isLogged && <NavItem to="/login" icon={<User />} label="Login" open={open} />}
         </nav>
-      </div>
+      </aside>
     </>
   )
 }
 
-export default Sidebar
+const NavItem = ({ to, icon, label }: { to: string; icon: any; label: string }) => (
+  <NavLink
+    to={to}
+    className={({ isActive }) =>
+      `flex items-center gap-3 p-3 rounded-lg transition-all ${
+        isActive ? "bg-cyan-700 text-white" : "hover:bg-gray-800 text-gray-300"
+      }`
+    }
+  >
+    <div className="grid place-items-center">{icon}</div>
+    <span>{label}</span>
+  </NavLink>
+)
 
-const NavItem = ({ to, icon, label, open }: { to: string; icon: any; label: string; open: boolean }) => {
-  return (
-    <NavLink
-      to={to}
-      className={({ isActive }) =>
-        `flex items-center w-full p-3 rounded-lg transition-all ${
-          isActive ? "bg-gray-800 text-white" : "hover:bg-gray-800 text-gray-300"
-        }`
-      }
-    >
-      <div className="grid place-items-center mr-3">{icon}</div>
-      <span className={`${open ? "inline" : "hidden"}`}>{label}</span>
-    </NavLink>
-  )
-}
+export default Sidebar

@@ -19,20 +19,20 @@ const UserProfile = () => {
 
   const [loading, setLoading] = useState(false)
   const [user, setUser] = useState<User | null>(null)
-  const token = localStorage.getItem('token')
-  const id=Number(localStorage.getItem('id'))
+  const accessToken = localStorage.getItem('token')
+  const userId=localStorage.getItem('id')
 
   useEffect(() => {
-       if (!token || !id) {
+       if (!accessToken || !userId) {
       navigate("/login")
       return
   } 
     const fetchData = async () => {
       try {
         setLoading(true)
-        const response = await axios.get(`http://localhost:3000/user/${id}`, {
+        const response = await axios.get(`http://localhost:3000/user/${userId}`, {
           headers: {
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${accessToken}`
           }
         })
         setUser(response.data)
@@ -43,15 +43,15 @@ const UserProfile = () => {
       }
     }
 
-    if (id) {
+    if (userId) {
       fetchData()
     }
-  }, [id])
+  }, [userId])
 
   return (
     <>
       <SideBar />
-      <div className="flex items-center justify-center">
+      <div className="flex-1 ml-0 md:ml-64 p-6 transition-all min-h-screen">
         {loading && !user ?   (
           <h1>Cargando...</h1>
         ): (

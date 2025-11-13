@@ -3,6 +3,7 @@ import LoginPage from './pages/LoginPage'
 import UserProfile from './pages/UserProfile'
 import RegisterPage from './pages/RegisterPage'
 import Dashboad from './pages/Dashboard'
+import ProyectPage from './pages/ProyectPage'
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
       <Route path="/profile" element={<UserProfile />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/dashboard" element={<Dashboad  />} />
+      <Route path="/proyects" element={<ProyectPage  />} />
     </Routes>
   )
 }

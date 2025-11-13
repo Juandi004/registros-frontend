@@ -27,8 +27,7 @@ const LoginPage = () => {
 
     localStorage.setItem("token", accessToken)
     localStorage.setItem("id", userId)
-
-    login()
+    login(accessToken, userId)
     navigate("/dashboard")
   } catch (err) {
     console.log(err)
