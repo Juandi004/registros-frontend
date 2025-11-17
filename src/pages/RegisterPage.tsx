@@ -6,6 +6,8 @@ import axios from "axios"
 import { useNavigate } from "react-router-dom"
 import { Eye, EyeOff } from "lucide-react"
 import { Link } from "react-router-dom"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircleIcon, CheckCircle2Icon, PopcornIcon } from "lucide-react"
 
 interface Career {
   id: string
@@ -33,6 +35,7 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false)
   const roleId= "e3273449-8b08-47eb-a1ef-f14ddbd10174"
   const [careerId, setCareerId]=useState('')
+  const [alert, setAlert]=useState(false)
 
   const handleRegister = async () => {
     try {
@@ -44,12 +47,18 @@ const RegisterPage = () => {
         roleId,
         careerId
       })
+      setAlert(true)
       console.log('Usuario registrado', res.data)
-      navigate("/login")
+      setTimeout(()=>{
+        navigate("/login")
+      }, 3000)
     } catch (error) {
       console.log('Error al intentar crear el usuario')
     } finally {
       setLoading(false)
+      setTimeout(()=>{
+        setAlert(false)
+      }, 3000)
     }
   }
 
@@ -123,6 +132,15 @@ const RegisterPage = () => {
         </p>
         </div>
       </div>
+        {alert && (
+          <Alert className="fixed top-4 right-4 w-auto bg-green-700 text-white">
+            <CheckCircle2Icon />
+            <AlertTitle>El usuario se ha creado correctamente!</AlertTitle>
+            <AlertDescription>
+              El usuario con nombre {name} se ha creado correctamente!.
+            </AlertDescription>
+          </Alert>
+        )}
     </>
   )
 }
