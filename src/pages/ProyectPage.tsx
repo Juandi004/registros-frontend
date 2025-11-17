@@ -2,10 +2,9 @@ import Sidebar from "@/components/SideBar"
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTrigger, DialogFooter, DialogTitle } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import axios from "axios"
-import type { User } from "@/types/User"
+
 
 type Proyect = {
   id: string
@@ -21,148 +20,139 @@ type Proyect = {
   createdBy: string 
 }
 
+type Career = {
+  id: string
+  name: string
+}
+
+const careers: Career[] = [
+    {id: "4be3823c-8eee-457c-a6dc-cb14ad2f697f", name: "Enfermería"},
+    {id: "53cbf4fd-b047-4132-ad16-468df7f06563", name: "Contabilidad"},
+    { id: "64e9fe08-0801-4b80-b7c8-9ec9472d4546", name: "Desarrollo de Software" },
+    { id: "7f270eb0-9e8c-48d9-9bde-5c67f330ba5c", name: "Diseño Gráfico" },
+    { id: "6ba8871b-1526-4f38-88d8-9b4966703831", name: "Gastronomía" },
+    { id: "af94e451-bb44-4444-835e-9a06f80e2809", name: "Marketing Digital y Negocios" },
+    { id: "362cf8d1-80e4-4365-8ce0-ecd9996ca06b", name: "Administración del Talento Humano" },
+    { id: "2a1e133f-797f-445b-9316-f5cc49a0d007", name: "Redes y Telecomunicaciones" },
+    { id: "62c25358-0a09-4af9-8100-4a56bb860051", name: "Electricidad" },
+  ]
+
+
 const ProyectPage = () => {
   const [projects, setProjects] = useState<Proyect[]>([])
-  const [proyectName, setProyectName]=useState('')
-  const [description, setDescription]=useState('')
-  const userId=localStorage.getItem("id")
-  const accessToken=localStorage.getItem("token")
-  const [user, setUser]=useState<User | null>(null)
-  const [loading, setLoading]=useState(false)
+  const [proyectName, setProyectName] = useState("")
+  const [description, setDescription] = useState("")
+  const accessToken = localStorage.getItem("token")
+  const [loadingProjects, setLoadingProjects] = useState(false)
 
-        useEffect(() => {
-        const fetchUser = async () => {
-            setLoading(true)
-            try {
-            const res = await axios.get(`https://localhost:8000/api/users/${userId}`, {
-                headers: { Authorization: `Bearer ${accessToken}` },
-            });
-            setUser(res.data);
-            } catch (error) {
-            console.log("Error al obtener el usuario", error);
-            }
-            setLoading(false)
-        };
-
-        const fetchProyects = async () => {
-            setLoading(true)
-            try {
-            const res = await axios.get('https://localhost:8000/api/projects');
-            setProjects(res.data);
-            } catch (error) {
-            console.log('Error al obtener los proyectos', error);
-            }
-            setLoading(false)
-        };
-
-        if (userId && accessToken) fetchUser();
-        fetchProyects();
-        }, [userId, accessToken]);
-
-  const handleCreateProyect = async() => {
-    setLoading(true)
-    try {
-        const req= await axios.post('https://localhost:8000/projects', {
-            name: proyectName, description
-        }
+  useEffect(() => {
+    const fetchProjects = async () => {
+      setLoadingProjects(true)
+      try {
+        const res = await axios.get("http://localhost:8000/api/projects", 
+          {headers: {
+            Authorization: `Bearer ${accessToken}`,
+          }}
         )
-        setLoading(false)
-        console.log('Proyecto creado', req.data)
-    } catch (error) {
-        console.log('Error al crear un proyecto', error)
+        setProjects(res.data.data)
+      } catch (error) {
+        console.log("Error al obtener los proyectos", error)
+      }
+      setLoadingProjects(false)
     }
-  } 
+    fetchProjects()
+  }, [])
+
+  const handleCreateProyect = async () => {
+    setLoadingProjects(true)
+    try {
+      const req = await axios.post(
+        "http://localhost:8000/api/projects",
+        { name: proyectName, description },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+                "Cache-Control": "no-cache",
+                Pragma: "no-cache",
+          },
+        }
+      )
+      console.log("Proyecto creado", req.data)
+    } catch (error) {
+      console.log("Error al crear un proyecto", error)
+    }
+    setLoadingProjects(false)
+  }
+  
 
   return (
     <>
-    <div className="flex bg-gay-800 min-h-screen">
-      <Sidebar />
-      <main className="flex-1 ml-0 md:ml-64 p-6 transition-all">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-white">Panel General</h2>
-          <Dialog>
-            <DialogTrigger className="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-lg text-xs">
-            + Nuevo Proyecto
-            </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
+      <div className="flex bg-gray-800 min-h-screen">
+        <Sidebar />
+
+        <main className="flex-1 ml-0 md:ml-64 p-6 transition-all">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-white">Panel General</h2>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-lg text-xs">
+                  + Nuevo Proyecto
+                </Button>
+              </DialogTrigger>
+
+              <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                <DialogTitle className="text-m">Crear Proyecto</DialogTitle>
-                <DialogDescription>
+                  <DialogTitle className="text-m">Crear Proyecto</DialogTitle>
+                  <DialogDescription>
                     Ingresa la información básica del nuevo proyecto.
-                </DialogDescription>
+                  </DialogDescription>
                 </DialogHeader>
 
                 <div className="grid gap-4 py-4">
-                <Input
+                  <Input
                     className="w-full px-3 py-2 rounded-md bg-gray-800 border border-gray-700 text-white"
                     placeholder="Nombre del proyecto"
-                    onChange={(e)=>setProyectName(e.target.value)}
-                />
-                <Input
+                    onChange={(e) => setProyectName(e.target.value)}
+                  />
+                  <Input
                     className="w-full px-3 py-2 rounded-md bg-gray-800 border border-gray-700 text-white"
                     placeholder="Descripción del proyecto"
-                    onChange={(e)=>setDescription(e.target.value)}
-                />
+                    onChange={(e) => setDescription(e.target.value)}
+                  />
                 </div>
 
                 <DialogFooter>
-                <Button variant="ghost">Cancelar</Button>
-                <Button onClick={handleCreateProyect}>Crear</Button>
+                  <DialogClose asChild>
+                    <Button variant="ghost">Cancelar</Button>
+                  </DialogClose>
+                  <Button onClick={handleCreateProyect}>Crear</Button>
                 </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-        <h3>Gestiona todos los proyectos PIENSA de las carreras del ITS Sudamericano</h3>
-        <h4>Proyectos Disponibles</h4>
-        { loading && (!projects || !user) ? (
-            <h1>Cargando...</h1>
-        ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {projects.map(p => (
-                <div key={p.id}>
-                    <h1>Título: {p.name}</h1>
-                    <h2>Descripción: {p.description}</h2>
-                    <h2>Carrera: {p.careerId}</h2>
-                </div>
-            ))}
-        </div>
-        ) }
-      </main>
-    </div>
-    <Dialog>
-      <form>
-        <DialogTrigger asChild>
-          <Button variant="outline">Open Dialog</Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Edit profile</DialogTitle>
-            <DialogDescription>
-              Make changes to your profile here. Click save when you&apos;re
-              done.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4">
-            <div className="grid gap-3">
-              <Label htmlFor="name-1">Name</Label>
-              <Input id="name-1" name="name" defaultValue="Pedro Duarte" />
-            </div>
-            <div className="grid gap-3">
-              <Label htmlFor="username-1">Username</Label>
-              <Input id="username-1" name="username" defaultValue="@peduarte" />
-            </div>
+              </DialogContent>
+            </Dialog>
           </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button type="submit">Save changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </form>
-    </Dialog>
-   </>
-    
+
+          <h3 className="text-white">Gestiona todos los proyectos PIENSA de las carreras del ITS Sudamericano</h3>
+          <h4 className="text-white mb-4">Proyectos Disponibles</h4>
+
+          {loadingProjects ? (
+            <h1 className="text-white">Cargando...</h1>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {projects.map(p => {
+                const careerName = careers.find(c => c.id === p.careerId)?.name;
+                return(
+                <div key={p.id} className="p-4 bg-gray-700 rounded-lg text-white">
+                  <h1><strong>Título:</strong> {p.name}</h1>
+                  <h2><strong>Descripción:</strong> {p.description}</h2>
+                  <h2><strong>Carrera:</strong> {careerName || "Sin carrera"}</h2>
+                </div>
+              )
+              })}
+            </div>
+          )}
+        </main>
+      </div>
+    </>
   )
 }
 

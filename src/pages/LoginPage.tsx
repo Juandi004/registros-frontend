@@ -12,7 +12,6 @@ import { AlertCircleIcon, CheckCircle2Icon } from "lucide-react"
 const LoginPage = () => {
   const navigate = useNavigate()
   const login = useAuthStore((s) => s.login)
-
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)

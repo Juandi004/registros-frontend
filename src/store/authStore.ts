@@ -6,7 +6,7 @@ type AuthStore = {
   token: string | null
   userId: string | null
   user: any | null
-  userCareer: any | null
+  careerId: any | null
   login: (token: string, userId: string) => void
   logout: () => void
   setUser: (user: any) => void
@@ -19,7 +19,7 @@ export const useAuthStore = create<AuthStore>()(
       token: null,
       userId: null,
       user: null,
-      userCareer: null,
+      careerId: null,
 
       login: (token, userId) => set({ isLoggedIn: true, token, userId }),
       logout: () => set({ isLoggedIn: false, token: null, userId: null, user: null }),

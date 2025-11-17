@@ -9,12 +9,12 @@ import { Link } from "react-router-dom"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircleIcon, CheckCircle2Icon } from "lucide-react"
 
-interface Career {
+type Career= {
   id: string
   name: string
 }
 
-  const careers: Career[] = [
+const careers: Career[] = [
     {id: "4be3823c-8eee-457c-a6dc-cb14ad2f697f", name: "Enfermería"},
     {id: "53cbf4fd-b047-4132-ad16-468df7f06563", name: "Contabilidad"},
     { id: "64e9fe08-0801-4b80-b7c8-9ec9472d4546", name: "Desarrollo de Software" },
