@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom"
 import { Eye, EyeOff } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircleIcon, CheckCircle2Icon, PopcornIcon } from "lucide-react"
+import { AlertCircleIcon, CheckCircle2Icon } from "lucide-react"
 
 interface Career {
   id: string
@@ -35,7 +35,8 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false)
   const roleId= "e3273449-8b08-47eb-a1ef-f14ddbd10174"
   const [careerId, setCareerId]=useState('')
-  const [alert, setAlert]=useState(false)
+  const [success, setSuccess] = useState(false)
+  const [errorAlert, setErrorAlert] = useState(false)
 
   const handleRegister = async () => {
     try {
@@ -47,18 +48,20 @@ const RegisterPage = () => {
         roleId,
         careerId
       })
-      setAlert(true)
+      setSuccess(true)
       console.log('Usuario registrado', res.data)
       setTimeout(()=>{
         navigate("/login")
       }, 3000)
     } catch (error) {
       console.log('Error al intentar crear el usuario')
+      setErrorAlert(true)
+      setTimeout(()=>{
+        setErrorAlert(false)
+      }, 3000)
+      
     } finally {
       setLoading(false)
-      setTimeout(()=>{
-        setAlert(false)
-      }, 3000)
     }
   }
 
@@ -66,10 +69,11 @@ const RegisterPage = () => {
     <>
       <div className="flex items-center justify-center min-h-screen bg-gray-900 p-4">
         <div className="w-full max-w-sm p-8 bg-gray-800 rounded-2xl shadow-lg space-y-6 text-gray-100">
-          <h1 className="text-xl font-semibold text-center text-cyan-400">Registrarse</h1>
+          <h1 className="text-xl font-semibold text-center text-white">Registrarse</h1>
 
           <Label htmlFor="name">Nombre</Label>
           <Input
+            required={true}
             placeholder="Nombres"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -86,6 +90,7 @@ const RegisterPage = () => {
 
           <Label htmlFor="email">E-mail</Label>
           <Input
+            required={true}
             type="email"
             placeholder="tu@email.com"
             value={email}
@@ -102,6 +107,7 @@ const RegisterPage = () => {
           <Label htmlFor="password">Contraseña</Label>
           <div className="relative">
             <Input
+              required={true}
               type={showPassword ? "text" : "password"}
               placeholder="Contraseña"
               value={password}
@@ -132,12 +138,21 @@ const RegisterPage = () => {
         </p>
         </div>
       </div>
-        {alert && (
+        {success && (
           <Alert className="fixed top-4 right-4 w-auto bg-green-700 text-white">
             <CheckCircle2Icon />
             <AlertTitle>El usuario se ha creado correctamente!</AlertTitle>
             <AlertDescription>
-              El usuario con nombre {name} se ha creado correctamente!.
+              El usuario con nombre {name} se ha creado correctamente!
+            </AlertDescription>
+          </Alert>
+        )}
+        {errorAlert && (
+          <Alert className="fixed top-4 right-4 w-auto bg-red-700 text-white">
+            <AlertCircleIcon />
+            <AlertTitle>Error al crear usuario</AlertTitle>
+            <AlertDescription>
+              Ha ocurrido un error al crear el usuario, intente nuevamente
             </AlertDescription>
           </Alert>
         )}

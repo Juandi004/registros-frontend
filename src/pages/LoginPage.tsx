@@ -40,7 +40,7 @@ const LoginPage = () => {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-900 p-4">
       <div className="w-full max-w-sm p-8 bg-gray-800 rounded-2xl shadow-lg space-y-6 text-gray-100">
-        <h1 className="text-2xl font-bold text-center text-cyan-400">Iniciar Sesión</h1>
+        <h1 className="text-2xl font-bold text-center text-white ">Iniciar Sesión</h1>
 
         {error && <p className="text-red-500 text-center text-sm">{error}</p>}
 
