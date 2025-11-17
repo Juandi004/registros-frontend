@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom"
 import axios from "axios"
 import { useAuthStore } from "@/store/authStore"
 import { Home, User, Settings, LogOut, Menu } from "lucide-react"
-import avatar from "../assets/avatar.svg"
+import avatar from "../assets/avatar.png"
 
 const Sidebar = () => {
 
@@ -58,8 +58,8 @@ const Sidebar = () => {
         </div>
 
         {isLogged && user && (
-          <div className="flex flex-col items-center py-6 border-b border-gray-800">
-            <img src={avatar} className="w-14 h-14 rounded-full object-cover mb-2 bg-gray-700" />
+          <div className="flex flex-col items-center py-5 border-b border-gray-800">
+            <img src={avatar} className="w-15 h-15 rounded-full object-cover mb-3 bg-white  " />
             <p className="font-semibold">{user.name}</p>
             <p className="text-sm text-gray-400">{user.email}</p>
           </div>
