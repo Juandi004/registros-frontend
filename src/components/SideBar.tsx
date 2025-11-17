@@ -4,6 +4,10 @@ import axios from "axios"
 import { useAuthStore } from "@/store/authStore"
 import { Home, User, Settings, LogOut, Menu } from "lucide-react"
 import avatar from "../assets/avatar.png"
+import { Dialog, DialogClose, DialogContent, DialogTrigger, DialogDescription, DialogHeader, DialogFooter, DialogTitle } from "./ui/dialog"
+import { Button } from "./ui/button"
+import { AlertCircleIcon, CheckCircle2Icon } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert"
 
 const Sidebar = () => {
 
@@ -14,7 +18,8 @@ const Sidebar = () => {
   const isLogged = useAuthStore((s) => s.isLoggedIn)
   const logoutStore = useAuthStore((s) => s.logout)
   const accesToken = localStorage.getItem("token")
-
+  const [success, setSuccess]=useState(false)
+  const [errorAlert, setErrorAlert]=useState(false)
   const [open, setOpen] = useState(true)
 
   useEffect(() => {
@@ -28,10 +33,18 @@ const Sidebar = () => {
   }, [isLogged, userId, accesToken, setUser])
 
   const handleLogout = () => {
+    try {
     localStorage.removeItem("token")
     localStorage.removeItem("id")
     logoutStore()
-    navigate("/login")
+    setSuccess(true)
+    setTimeout(()=>{
+      setSuccess(false);
+      navigate("/login")
+    }, 2000)
+    } catch (error) {
+      setErrorAlert(true)
+    }
   }
 
   return (
@@ -70,15 +83,60 @@ const Sidebar = () => {
           <NavItem to="/profile" icon={<User />} label="Perfil" />
           <NavItem to="/proyects" icon={<Settings />} label="Proyectos" />
 
+        <div className="py-7">
           {isLogged && (
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 text-red-400 mt-auto"
-            >
-              <LogOut className="w-5 h-5" />
-              <span>Cerrar Sesión</span>
-            </button>
+              <Dialog>
+                <DialogTrigger asChild className=" bg-red-600 rounded-lg hover:bg-red-800 cursor-pointer">
+                  <button className="flex items-center gap-2 p-3 mt-4 w-full text-left">
+                    <LogOut className="w-5 h-5" />
+                    <span>Cerrar Sesión</span>
+                  </button>
+                </DialogTrigger>
+
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="text-m">Cerrar Sesión</DialogTitle>
+                  </DialogHeader>
+
+                  <DialogDescription>
+                    ¿Está seguro que desea cerrar sesión?
+                  </DialogDescription>
+
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <Button className="bg-gray-700 hover:bg-gray-900" variant="ghost">
+                        Cancelar
+                      </Button>
+                    </DialogClose>
+                    <Button
+                      className="bg-red-500 hover:bg-red-900 cursor-pointer"
+                      onClick={handleLogout}
+                    >
+                      Cerrar Sesión
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
           )}
+          {success && (
+          <Alert className="fixed top-4 right-4 w-auto bg-green-700 text-white">
+            <CheckCircle2Icon />
+            <AlertTitle>Sesión cerrada</AlertTitle>
+            <AlertDescription>
+              Se ha cerrado sesión correctamente!
+            </AlertDescription>
+          </Alert>
+        )}
+        {errorAlert && (
+          <Alert className="fixed top-4 right-4 w-auto bg-red-700 text-white">
+            <AlertCircleIcon />
+            <AlertTitle>Error al cerrar sesión</AlertTitle>
+            <AlertDescription>
+              Ha ocurrido un error intentar cerrar sesión, <br />intente nuevamente
+            </AlertDescription>
+          </Alert>
+        )}
+          </div>
         </nav>
       </aside>
     </>

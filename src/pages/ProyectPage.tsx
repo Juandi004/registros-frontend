@@ -11,13 +11,14 @@ type Proyect = {
   id: string
   name: string
   description: string
-  status: string      // por defecto "in-progress"
+  status: string      
   startDate?: string | null
   endDate?: string | null
   careerId: string
   skillsId?: string | null
   createdAt: string
-  updatedAt: string   // relación opcional
+  updatedAt: string 
+  createdBy: string 
 }
 
 const ProyectPage = () => {
@@ -92,10 +93,15 @@ const ProyectPage = () => {
                 </DialogHeader>
 
                 <div className="grid gap-4 py-4">
-                <input
+                <Input
                     className="w-full px-3 py-2 rounded-md bg-gray-800 border border-gray-700 text-white"
                     placeholder="Nombre del proyecto"
                     onChange={(e)=>setProyectName(e.target.value)}
+                />
+                <Input
+                    className="w-full px-3 py-2 rounded-md bg-gray-800 border border-gray-700 text-white"
+                    placeholder="Descripción del proyecto"
+                    onChange={(e)=>setDescription(e.target.value)}
                 />
                 </div>
 

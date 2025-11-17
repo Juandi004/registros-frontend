@@ -8,11 +8,9 @@ const UserProfile = () => {
 
   type User={
   name: string,
-  username: string,
-  age: number,
+  careerId: string
   avatar: string,
   email: string;
-  likedMovies: string[]
 }
 
   const navigate=useNavigate()
@@ -30,7 +28,7 @@ const UserProfile = () => {
     const fetchData = async () => {
       try {
         setLoading(true)
-        const response = await axios.get(`http://localhost:3000/user/${userId}`, {
+        const response = await axios.get(`http://localhost:8000/api/users/${userId}`, {
           headers: {
             Authorization: `Bearer ${accessToken}`
           }
@@ -52,27 +50,26 @@ const UserProfile = () => {
     <>
       <SideBar />
       <div className="flex-1 ml-0 md:ml-64 p-6 transition-all min-h-screen">
-        {loading && !user ?   (
-          <h1>Cargando...</h1>
-        ): (
-          <Card className="flex items-center justify-center">
-            <CardTitle>Perfil de Usuario</CardTitle>
-            <CardContent>
-              <ul className="flex flex-col gap-4 p-6 w-150 max-w-sm">
+        {loading && !user ? (
+            <h1>Cargando...</h1>
+          ) : (
+            <Card className="flex items-center justify-center">
+              <CardTitle>Perfil de Usuario</CardTitle>
+              <CardContent>
+                <ul className="flex flex-col gap-4 p-6 w-150 max-w-sm">
                   <div className="avatar">
                     <div className="ring-primary ring-offset-base-100 w-24 rounded-full ring-2 ring-offset-2">
                       <img src={user?.avatar} />
                     </div>
                   </div>
-                <h1><strong>Nombre: </strong> {user?.name}</h1>
-                <h1><strong>Edad: </strong> {user?.age}</h1>
-                <h1><strong> Username:</strong>  {user?.username}</h1>
-                <h1><strong> E-mail:</strong>  {user?.email}</h1>
-              </ul>
-            </CardContent>
-          </Card>
-        )
-      }
+                  <h1><strong>Nombre: </strong> {user?.name}</h1>
+                  <h1><strong> Carrera:</strong> {user?.careerId}</h1>
+                  <h1><strong> E-mail:</strong> {user?.email}</h1>
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+
       </div>
     </>
   )

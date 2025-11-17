@@ -6,6 +6,8 @@ import { useNavigate, Link } from "react-router-dom"
 import axios from "axios"
 import { useAuthStore } from "@/store/authStore"
 import { Eye, EyeOff } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircleIcon, CheckCircle2Icon } from "lucide-react"
 
 const LoginPage = () => {
   const navigate = useNavigate()
@@ -16,6 +18,8 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [success, setSuccess]=useState(false)
+  const [errorAlert, setErrorAlert]=useState(false)
 
   const handleLogin = useCallback(async () => {
   setLoading(true)
@@ -28,10 +32,18 @@ const LoginPage = () => {
     localStorage.setItem("token", accessToken)
     localStorage.setItem("id", userId)
     login(accessToken, userId)
-    navigate("/dashboard")
+    setSuccess(true)
+    setTimeout(()=>{
+      setSuccess(false);
+      navigate("/dashboard")
+    }, 2000)
+    
   } catch (err) {
-    console.log(err)
-    setError("Credenciales incorrectas")
+    console.log(error)
+    setErrorAlert(true)
+    setTimeout(()=>{
+      setErrorAlert(false)
+    }, 3000)
   } finally {
     setLoading(false)
   }
@@ -93,6 +105,24 @@ const LoginPage = () => {
             Regístrate
           </Link>
         </p>
+        {success && (
+          <Alert className="fixed top-4 right-4 w-auto bg-green-700 text-white">
+            <CheckCircle2Icon />
+            <AlertTitle>Éxito</AlertTitle>
+            <AlertDescription>
+              Se ha iniciado sesión correctamente!
+            </AlertDescription>
+          </Alert>
+        )}
+        {errorAlert && (
+          <Alert className="fixed top-4 right-4 w-auto bg-red-700 text-white">
+            <AlertCircleIcon />
+            <AlertTitle>Error al iniciar sesión</AlertTitle>
+            <AlertDescription>
+              Ha ocurrido un error al iniciar sesión, intente nuevamente <br /> Asegúrese de tener una cuenta en la plataforma 😊
+            </AlertDescription>
+          </Alert>
+        )}
       </div>
     </div>
   )
