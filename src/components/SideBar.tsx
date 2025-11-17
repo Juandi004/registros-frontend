@@ -24,8 +24,7 @@ const Sidebar = () => {
 
   useEffect(() => {
     if (!isLogged || !accesToken || !userId) return
-    axios
-      .get(`http://localhost:8000/api/users/${userId}`, {
+    axios.get(`http://localhost:8000/api/users/${userId}`, {
         headers: { Authorization: `Bearer ${accesToken}` },
       })
       .then((res) => setUser(res.data))

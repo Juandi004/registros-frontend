@@ -5,6 +5,8 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, Di
 import { Input } from "@/components/ui/input"
 import axios from "axios"
 import { Loader2 } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircleIcon, CheckCircle2Icon } from "lucide-react"
 
 type Proyect = {
   id: string
@@ -15,14 +17,19 @@ type Proyect = {
   endDate?: string | null
   careerId: string
   skillsId?: string | null
-  createdAt: string
-  updatedAt: string 
-  createdBy: string 
+  createdAt?: string
+  updatedAt?: string 
+  createdBy?: string 
 }
 
 type Career ={
   id: string,
   name: string,
+}
+
+type User = {
+  id: string
+  careerId: string
 }
 
 const ProyectPage = () => {
@@ -31,19 +38,12 @@ const ProyectPage = () => {
   const [description, setDescription] = useState("")
   const accessToken = localStorage.getItem("token")
   const [loadingProjects, setLoadingProjects] = useState(false)
+  const [loading, setLoading]=useState(false)
   const [careers, setCareers]=useState<Career[]>([])
-
-    useEffect(() => {
-      const fetchCareers = async () => {
-        try {
-          const res = await axios.get('http://localhost:8000/api/careers', {
-            headers: { Authorization: `Bearer ${accessToken}` }
-          })
-          setCareers(res.data.data)
-        } catch (error) {
-          console.log('Error al obtener las carreras', error)
-        }
-      }
+  const [success, setSuccess]=useState(false)
+  const [errorAlert, setErrorAlert]=useState(false)
+  const [user, setUser]=useState<User | null>(null)
+  const userId=localStorage.getItem('id')
 
       const fetchProjects = async () => {
         setLoadingProjects(true)
@@ -58,12 +58,40 @@ const ProyectPage = () => {
         setLoadingProjects(false)
       }
 
+    useEffect(() => {
+      const fetchCareers = async () => {
+        try {
+          const res = await axios.get('http://localhost:8000/api/careers', {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          })
+          setCareers(res.data.data)
+        } catch (error) {
+          console.log('Error al obtener las carreras', error)
+        }
+      }
+
       fetchCareers()
       fetchProjects()
+
+    const fetchUser = async () => {
+      try {
+        setLoading(true)
+        const response = await axios.get(`http://localhost:8000/api/users/${userId}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        })
+        setUser(response.data)
+      } catch (error) {
+        console.error("Error al obtener datos del usuario:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchUser()
     }, [])
 
-
-  const fetchCareers=async()=>{
+/*   const fetchCareers=async()=>{
     try {
       const res= await axios.get('http://localhost:8000/api/careers', 
         {headers: {
@@ -76,9 +104,34 @@ const ProyectPage = () => {
       console.log('Error al obtener las carreras')
     }
     fetchCareers()
+  } */
+
+    const handleCreateProyect=async()=>{
+    try {
+      const res=await axios.post('http://localhost:8000/api/projects',
+        {
+          name: proyectName,
+          description,
+          careerId
+        }
+      )
+      setSuccess(true)
+      setTimeout(()=>{
+        setSuccess(false)
+      }, 3000)
+      console.log('Se creó el proyecto', res.data.data)
+      await fetchProjects()
+    } catch (error) {
+      setErrorAlert(true)
+            setTimeout(()=>{
+        setErrorAlert(false)
+      }, 3000)
+      console.log('Error al crear un proyecto', error)
+    }
   }
 
-  
+  const careerId=user?.careerId
+
   return (
     <>
       <div className="flex bg-gray-800 min-h-screen">
@@ -94,7 +147,7 @@ const ProyectPage = () => {
                 </Button>
               </DialogTrigger>
 
-              <DialogContent className="sm:max-w-md">
+              <DialogContent className="sm:max-w-md bg-gray-800">
                 <DialogHeader>
                   <DialogTitle className="text-m">Crear Proyecto</DialogTitle>
                   <DialogDescription>
@@ -119,7 +172,7 @@ const ProyectPage = () => {
                   <DialogClose asChild>
                     <Button variant="ghost">Cancelar</Button>
                   </DialogClose>
-                  <Button >Crear</Button>
+                  <Button onClick={handleCreateProyect}>Crear</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -145,6 +198,24 @@ const ProyectPage = () => {
                 </div>
               )
               })}
+                {success && (
+                  <Alert className="fixed top-4 right-4 w-auto bg-green-700 text-white">
+                    <CheckCircle2Icon />
+                    <AlertTitle>El proyecto se ha creado correctamente!</AlertTitle>
+                    <AlertDescription>
+                      El proyecto con nombre {proyectName} se ha creado correctamente!
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {errorAlert && (
+                  <Alert className="fixed top-4 right-4 w-auto bg-red-700 text-white">
+                    <AlertCircleIcon />
+                    <AlertTitle>Error al crear el proyecto</AlertTitle>
+                    <AlertDescription>
+                      Ha ocurrido un error al crear el proyecto, intente nuevamente
+                    </AlertDescription>
+                  </Alert>
+                )}             
             </div>
           )}
         </main>

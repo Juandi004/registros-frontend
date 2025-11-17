@@ -73,7 +73,7 @@ const RegisterPage = () => {
 
  const roleId = role
   ? role.find(r => r.name === 'TEACHER')?.id
-  : "";
+  : "";   
 
   const handleRegister = async () => {
     try {
