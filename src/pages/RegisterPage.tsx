@@ -8,8 +8,9 @@ import { Eye, EyeOff } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircleIcon, CheckCircle2Icon } from "lucide-react"
+import { careers } from "@/constants/careers"
 
-type Career= {
+/* type Career= {
   id: string
   name: string
 }
@@ -25,7 +26,7 @@ const careers: Career[] = [
     { id: "2a1e133f-797f-445b-9316-f5cc49a0d007", name: "Redes y Telecomunicaciones" },
     { id: "62c25358-0a09-4af9-8100-4a56bb860051", name: "Electricidad" },
   ]
-
+ */
 const RegisterPage = () => {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')

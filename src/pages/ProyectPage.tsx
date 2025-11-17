@@ -4,7 +4,8 @@ import { useEffect, useState } from "react"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTrigger, DialogFooter, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import axios from "axios"
-
+import { careers } from "@/constants/careers"
+import { Loader2 } from "lucide-react"
 
 type Proyect = {
   id: string
@@ -19,24 +20,6 @@ type Proyect = {
   updatedAt: string 
   createdBy: string 
 }
-
-type Career = {
-  id: string
-  name: string
-}
-
-const careers: Career[] = [
-    {id: "4be3823c-8eee-457c-a6dc-cb14ad2f697f", name: "Enfermería"},
-    {id: "53cbf4fd-b047-4132-ad16-468df7f06563", name: "Contabilidad"},
-    { id: "64e9fe08-0801-4b80-b7c8-9ec9472d4546", name: "Desarrollo de Software" },
-    { id: "7f270eb0-9e8c-48d9-9bde-5c67f330ba5c", name: "Diseño Gráfico" },
-    { id: "6ba8871b-1526-4f38-88d8-9b4966703831", name: "Gastronomía" },
-    { id: "af94e451-bb44-4444-835e-9a06f80e2809", name: "Marketing Digital y Negocios" },
-    { id: "362cf8d1-80e4-4365-8ce0-ecd9996ca06b", name: "Administración del Talento Humano" },
-    { id: "2a1e133f-797f-445b-9316-f5cc49a0d007", name: "Redes y Telecomunicaciones" },
-    { id: "62c25358-0a09-4af9-8100-4a56bb860051", name: "Electricidad" },
-  ]
-
 
 const ProyectPage = () => {
   const [projects, setProjects] = useState<Proyect[]>([])
@@ -84,7 +67,6 @@ const ProyectPage = () => {
     setLoadingProjects(false)
   }
   
-
   return (
     <>
       <div className="flex bg-gray-800 min-h-screen">
@@ -135,7 +117,10 @@ const ProyectPage = () => {
           <h4 className="text-white mb-4">Proyectos Disponibles</h4>
 
           {loadingProjects ? (
+          <div className="flex-1 ml-0 md:ml-64 p-6 transition-all min-h-screen max-w-screen">
+            <Loader2 className="w-10 h-10 animate-spin" />
             <h1 className="text-white">Cargando...</h1>
+          </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {projects.map(p => {

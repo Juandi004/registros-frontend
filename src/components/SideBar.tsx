@@ -93,7 +93,7 @@ const Sidebar = () => {
                   </button>
                 </DialogTrigger>
 
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-md bg-gray-800">
                   <DialogHeader>
                     <DialogTitle className="text-m">Cerrar Sesión</DialogTitle>
                   </DialogHeader>
