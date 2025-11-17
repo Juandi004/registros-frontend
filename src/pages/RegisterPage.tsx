@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -8,13 +8,17 @@ import { Eye, EyeOff } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircleIcon, CheckCircle2Icon } from "lucide-react"
-import { careers } from "@/constants/careers"
 
-/* type Career= {
+ type Career= {
   id: string
   name: string
 }
 
+type Role = {
+  id: string,
+  name: string
+}
+/*
 const careers: Career[] = [
     {id: "4be3823c-8eee-457c-a6dc-cb14ad2f697f", name: "Enfermería"},
     {id: "53cbf4fd-b047-4132-ad16-468df7f06563", name: "Contabilidad"},
@@ -34,10 +38,42 @@ const RegisterPage = () => {
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const roleId= "e3273449-8b08-47eb-a1ef-f14ddbd10174"
+  const [role, setRole]=useState<Role[]>([])
   const [careerId, setCareerId]=useState('')
   const [success, setSuccess] = useState(false)
   const [errorAlert, setErrorAlert] = useState(false)
+  const [careers, setCareers]=useState<Career[]>([])
+
+  useEffect(()=>{
+      const fetchCareers = async () => {
+        try {
+          const res = await axios.get('http://localhost:8000/api/careers')
+          setCareers(res.data.data)
+        } catch (error) {
+          console.log('Error al obtener las carreras', error)
+        }
+      }
+      fetchCareers()
+
+      const fetchRole = async()=>{
+        setLoading(true)
+        try {
+          const res = await axios.get('http://localhost:8000/api/roles')
+          console.log('Roles obtenidos', res.data.data)
+          setRole(res.data.data)
+        } catch (error) {
+          console.log('Error al obtener roles')
+        }
+        finally{
+          setLoading(false)
+        }
+      }
+      fetchRole()
+  },[])
+
+ const roleId = role
+  ? role.find(r => r.name === 'TEACHER')?.id
+  : "";
 
   const handleRegister = async () => {
     try {
@@ -45,8 +81,8 @@ const RegisterPage = () => {
       const res = await axios.post('http://localhost:8000/api/users', {
         name,
         email,
-        password,
         roleId,
+        password,
         careerId
       })
       setSuccess(true)

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTrigger, DialogFooter, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import axios from "axios"
-import { careers } from "@/constants/careers"
 import { Loader2 } from "lucide-react"
 
 type Proyect = {
@@ -21,51 +20,64 @@ type Proyect = {
   createdBy: string 
 }
 
+type Career ={
+  id: string,
+  name: string,
+}
+
 const ProyectPage = () => {
   const [projects, setProjects] = useState<Proyect[]>([])
   const [proyectName, setProyectName] = useState("")
   const [description, setDescription] = useState("")
   const accessToken = localStorage.getItem("token")
   const [loadingProjects, setLoadingProjects] = useState(false)
+  const [careers, setCareers]=useState<Career[]>([])
 
-  useEffect(() => {
-    const fetchProjects = async () => {
-      setLoadingProjects(true)
-      try {
-        const res = await axios.get("http://localhost:8000/api/projects", 
-          {headers: {
-            Authorization: `Bearer ${accessToken}`,
-          }}
-        )
-        setProjects(res.data.data)
-      } catch (error) {
-        console.log("Error al obtener los proyectos", error)
-      }
-      setLoadingProjects(false)
-    }
-    fetchProjects()
-  }, [])
-
-  const handleCreateProyect = async () => {
-    setLoadingProjects(true)
-    try {
-      const req = await axios.post(
-        "http://localhost:8000/api/projects",
-        { name: proyectName, description },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-                "Cache-Control": "no-cache",
-                Pragma: "no-cache",
-          },
+    useEffect(() => {
+      const fetchCareers = async () => {
+        try {
+          const res = await axios.get('http://localhost:8000/api/careers', {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          })
+          setCareers(res.data.data)
+        } catch (error) {
+          console.log('Error al obtener las carreras', error)
         }
+      }
+
+      const fetchProjects = async () => {
+        setLoadingProjects(true)
+        try {
+          const res = await axios.get("http://localhost:8000/api/projects", {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          })
+          setProjects(res.data.data)
+        } catch (error) {
+          console.log("Error al obtener los proyectos", error)
+        }
+        setLoadingProjects(false)
+      }
+
+      fetchCareers()
+      fetchProjects()
+    }, [])
+
+
+  const fetchCareers=async()=>{
+    try {
+      const res= await axios.get('http://localhost:8000/api/careers', 
+        {headers: {
+          Authorization: `Bearer ${accessToken}`
+        }}
       )
-      console.log("Proyecto creado", req.data)
+      setCareers(res.data.data)
+      console.log('Carreras obtenidas', res.data.data)
     } catch (error) {
-      console.log("Error al crear un proyecto", error)
+      console.log('Error al obtener las carreras')
     }
-    setLoadingProjects(false)
+    fetchCareers()
   }
+
   
   return (
     <>
@@ -107,7 +119,7 @@ const ProyectPage = () => {
                   <DialogClose asChild>
                     <Button variant="ghost">Cancelar</Button>
                   </DialogClose>
-                  <Button onClick={handleCreateProyect}>Crear</Button>
+                  <Button >Crear</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -124,7 +136,7 @@ const ProyectPage = () => {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {projects.map(p => {
-                const careerName = careers.find(c => c.id === p.careerId)?.name;
+                  const careerName = careers.find(c => c.id === p.careerId)?.name;
                 return(
                 <div key={p.id} className="p-4 bg-gray-700 rounded-lg text-white">
                   <h1><strong>Título:</strong> {p.name}</h1>

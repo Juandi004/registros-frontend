@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom"
 import { Card, CardTitle, CardContent } from "@/components/ui/card"
 import avatar from "../assets/avatar.png"
 import { Loader2 } from "lucide-react"
-import { careers } from "@/constants/careers"
 
 const UserProfile = () => {
   type User={
@@ -15,10 +14,10 @@ const UserProfile = () => {
   email: string;
 }
 
-/*   type Career={
+type Career={
     id: string
     name: string
-  } */
+  }
 
   const navigate=useNavigate()
 
@@ -26,8 +25,7 @@ const UserProfile = () => {
   const [user, setUser] = useState<User | null>(null)
   const accessToken = localStorage.getItem('token')
   const userId=localStorage.getItem('id')
-/*   const [career, setCareer]=useState<Career | null >(null)
-  const careerId=localStorage.getItem('careerId') */
+  const [careers, setCareers]=useState<Career[]>([])
 
   useEffect(() => {
       if (!accessToken || !userId) {
@@ -49,21 +47,21 @@ const UserProfile = () => {
         setLoading(false)
       }
     }
-
-/*     const fetchCareerData=async()=>{
+const fetchCareerData=async()=>{
       setLoading(true)
       try {
-        const res=await axios.get(`http://localhost:8000/api/careers/${careerId}`, {
+        const res=await axios.get(`http://localhost:8000/api/careers/`, {
           headers: {
             Authorization: `Bearer ${accessToken}`
           }
         })
-        setCareer(res.data)
+        setCareers(res.data.data)
         console.log('Carrera del usuario', res.data)
       } catch (error) {
         console.log('Error al obtener la carrera')
       }
-    } */
+    } 
+    fetchCareerData()
     if (userId) {
       fetchData()
     }
