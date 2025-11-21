@@ -12,6 +12,7 @@ const UserProfile = () => {
   careerId: string
   avatar: string,
   email: string;
+  roleId: string;
 }
 
 type Career={
@@ -19,6 +20,10 @@ type Career={
     name: string
   }
 
+  type Role = {
+    id: string,
+    name: string
+  }
   const navigate=useNavigate()
 
   const [loading, setLoading] = useState(false)
@@ -26,6 +31,7 @@ type Career={
   const accessToken = localStorage.getItem('token')
   const userId=localStorage.getItem('id')
   const [careers, setCareers]=useState<Career[]>([])
+  const [role, setRole]=useState<Role[]>([])
 
   useEffect(() => {
       if (!accessToken || !userId) {
@@ -61,6 +67,20 @@ const fetchCareerData=async()=>{
         console.log('Error al obtener la carrera')
       }
     } 
+        const fetchRole = async()=>{
+        setLoading(true)
+        try {
+          const res = await axios.get('http://localhost:8000/api/roles')
+          console.log('Roles obtenidos', res.data.data)
+          setRole(res.data.data)
+        } catch (error) {
+          console.log('Error al obtener roles')
+        }
+        finally{
+          setLoading(false)
+        }
+      }
+      fetchRole()
     fetchCareerData()
     if (userId) {
       fetchData()
@@ -73,6 +93,8 @@ const fetchCareerData=async()=>{
   const careerName = user
   ? careers.find(c => c.id === user.careerId)?.name
   : "";
+
+  const roleName = user ? role.find(r=> r.id === user.roleId)?.name: "";
 
   return (
     <>
@@ -96,6 +118,7 @@ const fetchCareerData=async()=>{
                   <h1><strong>Nombre: </strong> {user?.name}</h1>
                   <h1><strong>Carrera: </strong>{careerName}</h1>
                   <h1><strong> E-mail:</strong> {user?.email}</h1>
+                  <h1><strong>Rol:</strong> {roleName}</h1>
                 </ul>
               </CardContent>
             </Card>

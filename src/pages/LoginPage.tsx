@@ -26,11 +26,12 @@ const LoginPage = () => {
   try {
     const res = await axios.post("http://localhost:8000/api/auth/login", { email, password })
 
-    const { accessToken, userId } = res.data
+    const { accessToken, userId, userRole } = res.data
 
     localStorage.setItem("token", accessToken)
     localStorage.setItem("id", userId)
-    login(accessToken, userId)
+    localStorage.setItem("role", userRole)
+    login(accessToken, userId, userRole)
     setSuccess(true)
     setTimeout(()=>{
       setSuccess(false);

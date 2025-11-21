@@ -31,13 +31,19 @@ type Career ={
 
 type User = {
   id: string
-  careerId: string
+  careerId: string,
+  roleId: string
 }
 
 type Skill = {
   id: string,
   description: string,
 }
+
+  type Role = {
+    id: string,
+    name: string
+  }
 
 const ProyectPage = () => {
   const [projects, setProjects] = useState<Proyect[]>([])
@@ -57,8 +63,8 @@ const ProyectPage = () => {
   const [selectedProject, setSelectedProject] = useState<Proyect | null>(null);
   const [deleteSuccess, setDeleteSuccess]=useState(false)
   const [errorDelete, setErrorDelete]=useState(false)
+  const [role, setRole]=useState<Role[]>([])
   
-
   const fetchProjects = async () => {
         setLoadingProjects(true)
         try {
@@ -99,6 +105,20 @@ const ProyectPage = () => {
 
       fetchCareers()
       fetchProjects()
+    const fetchRole = async()=>{
+        setLoading(true)
+        try {
+          const res = await axios.get('http://localhost:8000/api/roles')
+          console.log('Roles obtenidos', res.data.data)
+          setRole(res.data.data)
+        } catch (error) {
+          console.log('Error al obtener roles')
+        }
+        finally{
+          setLoading(false)
+        }
+      }
+      fetchRole()
 
     const fetchUser = async () => {
       try {
@@ -191,6 +211,11 @@ const ProyectPage = () => {
     }
   }
 
+  const roleName = user ? role.find(r=> r.id === user.roleId)?.name: "";
+  const careerName = user
+  ? careers.find(c => c.id === user.careerId)?.name
+  : "";
+
   return (
     <>
       <div className="flex bg-gray-800 min-h-screen">
@@ -222,19 +247,20 @@ const ProyectPage = () => {
                 </DialogHeader>
 
                 <div className="grid gap-4 py-4">
-                  <Label className="text-bold">Información general del proyecto</Label>
+                  <Label className="text-bold">Nombre del proyecto:</Label>
                   <Input
                     className="w-full px-3 py-2 rounded-md bg-gray-800 border border-gray-700 text-white"
                     placeholder="Nombre del proyecto"
                     onChange={(e) => setProjectName(e.target.value)}
                   />
+                  <Label className="text-bold">Descripción del proyecto:</Label>
                   <Input
                     className="w-full px-3 py-2 rounded-md bg-gray-800 border border-gray-700 text-white"
                     placeholder="Descripción del proyecto"
                     onChange={(e) => setDescription(e.target.value)}
                   />
                 </div>
-                <Label>Carrera</Label>
+               <Label>Carrera</Label>
                 <select className="w-full p-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-cyan-400 focus:ring-cyan-400" value={careerId} onChange={(e)=>setCareerId(e.target.value)}>
                   <option value="">ㅤㅤ</option>
                   {careers.map(c=>(
@@ -267,7 +293,7 @@ const ProyectPage = () => {
             <h1 className="text-white">Cargando...</h1>
           </div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 py-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-6 py-6">
               {projects
               .filter(p=>
                 p.name.toLowerCase().includes(search.toLocaleLowerCase()) ||
@@ -289,7 +315,9 @@ const ProyectPage = () => {
                         <h2><strong>Carrera:</strong> {careerName || "Sin carrera"}</h2>
                       </div>
                       <div className="flex flex-col items-center gap-2">
-                        <Dialog>
+                      {roleName==='ADMIN'?(
+                        <>
+                          <Dialog>
                           <DialogTrigger asChild>
                             <Button variant="ghost" className="p-2 bg-gray-700 hover:bg-gray-600 cursor-pointer">
                               <Trash className="w-5 h-5 stroke-red-500" />
@@ -315,6 +343,10 @@ const ProyectPage = () => {
                             </DialogFooter>
                           </DialogContent>
                         </Dialog>
+                        </>
+                      ):(
+                        <></>
+                      )}
                         <Dialog>
                           <DialogTrigger asChild>
                             <Button
