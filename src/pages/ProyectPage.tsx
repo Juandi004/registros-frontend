@@ -55,6 +55,8 @@ const ProyectPage = () => {
   const [projects, setProjects] = useState<Proyect[]>([])
   const [projectName, setProjectName] = useState("")
   const [description, setDescription] = useState("")
+  const [startDate, setStartDate]=useState("")
+  const [endDate, setEndDate]=useState("")
   const accessToken = localStorage.getItem("token")
   const [loadingProjects, setLoadingProjects] = useState(false)
   const [loading, setLoading]=useState(false)
@@ -166,6 +168,8 @@ const ProyectPage = () => {
         setProjectName(project.name);
         setDescription(project.description);
         setCareerId(project.careerId);
+        setStartDate(project.startDate)
+        setEndDate(project.endDate)
       };
 
     const handleDeleteProyect=async(id: string)=>{
@@ -196,6 +200,8 @@ const ProyectPage = () => {
             name: projectName,
             description,
             careerId,
+            startDate: startDate ? new Date(startDate).toISOString() : null,
+            endDate: endDate ? new Date(endDate).toISOString() : null,
           });
 
           setSuccess(true);
@@ -216,7 +222,9 @@ const ProyectPage = () => {
         {
           name: projectName,
           description,
-          careerId
+          careerId,
+          startDate: startDate ? new Date(startDate).toISOString() : null,
+          endDate: endDate ? new Date(endDate).toISOString() : null,
         }
       )
       setSuccess(true)
@@ -268,21 +276,33 @@ const ProyectPage = () => {
                 <DialogHeader>
                   <DialogTitle className="text-l font-black">Añadir Proyecto</DialogTitle>
                 </DialogHeader>
-
-                <div className="grid gap-4 py-4">
-                  <Label className="text-bold">Nombre del proyecto:</Label>
+                  <Label className="text-bold">Nombre del proyecto</Label>
                   <Input
                     className="w-full px-3 py-2 rounded-md bg-gray-800 border border-gray-700 text-white"
                     placeholder="Nombre del proyecto"
                     onChange={(e) => setProjectName(e.target.value)}
                   />
-                  <Label className="text-bold">Descripción del proyecto:</Label>
+                  <Label className="text-bold">Descripción del proyecto</Label>
                   <Input
                     className="w-full px-3 py-2 rounded-md bg-gray-800 border border-gray-700 text-white"
                     placeholder="Descripción del proyecto"
                     onChange={(e) => setDescription(e.target.value)}
                   />
-                </div>
+                  <Label className="text-bold">Fecha de Inicio</Label>
+                  <Input
+                  type="date"
+                    className="w-full px-3 py-2 rounded-md bg-gray-800 border border-gray-700 text-white"
+                    placeholder="Descripción del proyecto"
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
+                  <Label className="text-bold">Fecha de Finalización</Label>
+                  <Input
+                    className="w-full px-3 py-2 rounded-md bg-gray-800 border border-gray-700 text-white"
+                    placeholder="Descripción del proyecto"
+                    type="date"
+                    onChange={(e) => setEndDate(e.target.value)}
+                  />
+ 
                <Label>Carrera</Label>
                 <select className="w-full p-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-cyan-400 focus:ring-cyan-400" value={careerId} onChange={(e)=>setCareerId(e.target.value)}>
                   <option value="">ㅤㅤ</option>
@@ -432,6 +452,20 @@ const ProyectPage = () => {
                                 className="bg-gray-900 border-gray-700 text-white"
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
+                              />
+                              <Label>Fecha de Inicio</Label>
+                              <Input
+                                className="bg-gray-900 border-gray-700 text-white"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                type="date"
+                              />
+                              <Label>Fecha de Finalización</Label>
+                              <Input
+                                className="bg-gray-900 border-gray-700 text-white"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                type="date"
                               />
                             </div>
 
