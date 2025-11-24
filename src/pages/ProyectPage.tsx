@@ -40,10 +40,16 @@ type Skill = {
   description: string,
 }
 
-  type Role = {
+type Role = {
     id: string,
     name: string
-  }
+}
+
+type UserProject={
+  id: string,
+  userId: string,
+  projectId: string
+}
 
 const ProyectPage = () => {
   const [projects, setProjects] = useState<Proyect[]>([])
@@ -64,6 +70,7 @@ const ProyectPage = () => {
   const [deleteSuccess, setDeleteSuccess]=useState(false)
   const [errorDelete, setErrorDelete]=useState(false)
   const [role, setRole]=useState<Role[]>([])
+  const [userProjects, setUserProjects]=useState<UserProject | null>(null)
   
   const fetchProjects = async () => {
         setLoadingProjects(true)
@@ -136,6 +143,22 @@ const ProyectPage = () => {
       }
     }
     fetchUser()
+    const fetchUserProyects=async()=>{
+      try {
+        setLoading(true)
+        const response= await axios.get('http://localhost:8000/api/users/proyects', {
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        })
+        setUserProjects(response.data.data)
+      } catch (error) {
+        console.log('Error al cargar los proyectos del usuario', error)
+      }finally{
+        setLoading(false)
+      }
+    }
+    fetchUserProyects()
     }, [])
 
     const loadProjectData = (project: Proyect) => {
@@ -212,9 +235,9 @@ const ProyectPage = () => {
   }
 
   const roleName = user ? role.find(r=> r.id === user.roleId)?.name: "";
-  const careerName = user
+/*   const careerName = user
   ? careers.find(c => c.id === user.careerId)?.name
-  : "";
+  : ""; */
 
   return (
     <>
@@ -288,71 +311,102 @@ const ProyectPage = () => {
           {/* <h4 className="text-white mb-4">Proyectos Disponibles</h4> */}
 
           {loadingProjects ? (
-          <div className="flex-1 ml-0 md:ml-64 p-6 transition-all min-h-screen max-w-screen py-3">
-            <Loader2 className="w-10 h-10 animate-spin" />
-            <h1 className="text-white">Cargando...</h1>
-          </div>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-6 py-6">
-              {projects
-              .filter(p=>
-                p.name.toLowerCase().includes(search.toLocaleLowerCase()) ||
-                p.description.toLowerCase().includes(search.toLocaleLowerCase()) ||
-                p.skillsId?.toLowerCase().includes(search.toLocaleLowerCase())
+  <div className="flex-1 ml-0 md:ml-64 p-6 transition-all min-h-screen max-w-screen py-3">
+    <Loader2 className="w-10 h-10 animate-spin" />
+    <h1 className="text-white">Cargando...</h1>
+  </div>
+) : (
+  <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-6 py-6">
+          {projects.length === 0 && (
+            <h1 className="text-white text-xl col-span-full text-center">
+              No hay proyectos disponibles
+            </h1>
+          )}
+          {projects.length > 0 &&
+            projects
+              .filter((p) =>
+                p.name.toLowerCase().includes(search.toLowerCase()) ||
+                p.description.toLowerCase().includes(search.toLowerCase()) ||
+                p.skillsId?.toLowerCase().includes(search.toLowerCase())
               )
-              .map(p => {
-                  const careerName = careers.find(c => c.id === p.careerId)?.name;
-                return(
-                <>
+              .map((p) => {
+                const careerName = careers.find((c) => c.id === p.careerId)?.name;
+
+                return (
                   <div
                     key={p.id}
                     className="p-4 bg-gray-900 rounded-lg text-white border border-gray-600 shadow-md"
                   >
                     <div className="flex justify-between items-start">
                       <div className="space-y-1">
-                        <h1 className="font-semibold text-lg"><strong>Título:</strong> {p.name}</h1>
-                        <h2><strong>Descripción:</strong> {p.description}</h2>
-                        <h2><strong>Carrera:</strong> {careerName || "Sin carrera"}</h2>
+                        <h1 className="font-semibold text-lg">
+                          <strong>Título:</strong> {p.name}
+                        </h1>
+                        <h2>
+                          <strong>Descripción:</strong> {p.description}
+                        </h2>
+                        <h2>
+                          <strong>Carrera:</strong> {careerName || "Sin carrera"}
+                        </h2>
+                        <h2>
+                          <strong>Estado:</strong> {p.status}
+                        </h2>
+                        <h2>
+                          <strong>Fecha de Inicio:</strong> {p.startDate?.slice(0, 10)}
+                        </h2>
+                        <h2>
+                          <strong>Fecha de Finalización:</strong> {p.endDate?.slice(0,10) || 'Pendiente por definir'}
+                        </h2>
+                        <h2>
+                          <strong></strong>{}
+                        </h2>
                       </div>
+
                       <div className="flex flex-col items-center gap-2">
-                      {roleName==='ADMIN'?(
-                        <>
+
+                        {/* ELIMINAR */}
+                        {roleName === "ADMIN" && (
                           <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="ghost" className="p-2 bg-gray-700 hover:bg-gray-600 cursor-pointer">
-                              <Trash className="w-5 h-5 stroke-red-500" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="sm:max-w-md bg-gray-800">
-                            <DialogHeader>
-                              <DialogTitle>Eliminar Proyecto</DialogTitle>
-                            </DialogHeader>
-                            <DialogDescription>
-                              ¿Está seguro que desea eliminar el proyecto {p.name}?
-                            </DialogDescription>
-                            <DialogFooter>
-                              <DialogClose asChild>
-                                <Button className="bg-gray-600 hover:bg-gray-700 cursor-pointer">Cancelar</Button>
-                              </DialogClose>
+                            <DialogTrigger asChild>
                               <Button
-                                className="bg-red-600 hover:bg-red-800 cursor-pointer"
-                                onClick={() => handleDeleteProyect(p.id)}
+                                variant="ghost"
+                                className="p-2 bg-gray-700 hover:bg-gray-600 cursor-pointer"
                               >
-                                Eliminar
+                                <Trash className="w-5 h-5 stroke-red-500" />
                               </Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
-                        </>
-                      ):(
-                        <></>
-                      )}
+                            </DialogTrigger>
+
+                            <DialogContent className="sm:max-w-md bg-gray-800">
+                              <DialogHeader>
+                                <DialogTitle>Eliminar Proyecto</DialogTitle>
+                              </DialogHeader>
+                              <DialogDescription>
+                                ¿Está seguro que desea eliminar el proyecto {p.name}?
+                              </DialogDescription>
+                              <DialogFooter>
+                                <DialogClose asChild>
+                                  <Button className="bg-gray-600 hover:bg-gray-700 cursor-pointer">
+                                    Cancelar
+                                  </Button>
+                                </DialogClose>
+                                <Button
+                                  className="bg-red-600 hover:bg-red-800 cursor-pointer"
+                                  onClick={() => handleDeleteProyect(p.id)}
+                                >
+                                  Eliminar
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                        )}
+
+                        {/* EDITAR */}
                         <Dialog>
                           <DialogTrigger asChild>
                             <Button
                               onClick={() => loadProjectData(p)}
                               variant="ghost"
-                              className="p-2 bg-gray-700 hover:bg-gray-600 cursor-pointer "
+                              className="p-2 bg-gray-700 hover:bg-gray-600 cursor-pointer"
                             >
                               <Pencil className="w-5 h-5" />
                             </Button>
@@ -360,8 +414,11 @@ const ProyectPage = () => {
 
                           <DialogContent className="sm:max-w-md bg-gray-800">
                             <DialogHeader>
-                              <DialogTitle className="font-semibold text-lg">Editar Proyecto</DialogTitle>
+                              <DialogTitle className="font-semibold text-lg">
+                                Editar Proyecto
+                              </DialogTitle>
                             </DialogHeader>
+
                             <div className="grid gap-3 py-3">
                               <Label>Nombre del proyecto</Label>
                               <Input
@@ -380,7 +437,9 @@ const ProyectPage = () => {
 
                             <DialogFooter>
                               <DialogClose asChild>
-                                <Button className="bg-red-600 hover:bg-red-800 cursor-pointer">Cancelar</Button>
+                                <Button className="bg-red-600 hover:bg-red-800 cursor-pointer">
+                                  Cancelar
+                                </Button>
                               </DialogClose>
                               <Button
                                 className="bg-green-600 hover:bg-green-800 cursor-pointer"
@@ -394,47 +453,47 @@ const ProyectPage = () => {
                       </div>
                     </div>
                   </div>
-                </>
-              )
+                );
               })}
-                {success && (
-                  <Alert className="fixed top-4 right-4 w-auto bg-green-700 text-white">
-                    <CheckCircle2Icon />
-                    <AlertTitle>El proyecto se ha creado o editado correctamente!</AlertTitle>
-                    <AlertDescription>
-                      El proyecto con nombre {projectName} se ha creado o editado correctamente!
-                    </AlertDescription>
-                  </Alert>
-                )}
-                {errorAlert && (
-                  <Alert className="fixed top-4 right-4 w-auto bg-red-700 text-white">
-                    <AlertCircleIcon />
-                    <AlertTitle>Error al crear o editar el proyecto</AlertTitle>
-                    <AlertDescription>
-                      Ha ocurrido un error al crea o editar el proyecto, intente nuevamente
-                    </AlertDescription>
-                  </Alert>
-                )}
-                {deleteSuccess && (
-                  <Alert className="fixed top-4 right-4 w-auto bg-green-700 text-white">
-                    <CheckCircle2Icon />
-                    <AlertTitle>El proyecto se ha eliminado correctamente!</AlertTitle>
-                    <AlertDescription>
-                      El proyecto seleccionado se ha eliminado correctamente!
-                    </AlertDescription>
-                  </Alert>
-                )}
-                {errorDelete && (
-                  <Alert className="fixed top-4 right-4 w-auto bg-red-700 text-white">
-                    <AlertCircleIcon />
-                    <AlertTitle>Error al eliminar el proyecto</AlertTitle>
-                    <AlertDescription>
-                      Ha ocurrido un error al eliminar el proyecto, intente nuevamente
-                    </AlertDescription>
-                  </Alert>
-                )}             
-            </div>
+          {success && (
+            <Alert className="fixed top-4 right-4 w-auto bg-green-700 text-white">
+              <CheckCircle2Icon />
+              <AlertTitle>Proyecto creado/editado con éxito</AlertTitle>
+              <AlertDescription>
+                El proyecto {projectName} se procesó correctamente.
+              </AlertDescription>
+            </Alert>
           )}
+
+          {errorAlert && (
+            <Alert className="fixed top-4 right-4 w-auto bg-red-700 text-white">
+              <AlertCircleIcon />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>
+                Ocurrió un problema al crear o editar el proyecto.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {deleteSuccess && (
+            <Alert className="fixed top-4 right-4 w-auto bg-green-700 text-white">
+              <CheckCircle2Icon />
+              <AlertTitle>Proyecto eliminado</AlertTitle>
+              <AlertDescription>Se eliminó correctamente.</AlertDescription>
+            </Alert>
+          )}
+
+          {errorDelete && (
+            <Alert className="fixed top-4 right-4 w-auto bg-red-700 text-white">
+              <AlertCircleIcon />
+              <AlertTitle>Error al eliminar</AlertTitle>
+              <AlertDescription>
+                Ocurrió un problema eliminando el proyecto.
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+      )}
         </main>
       </div>
     </>
