@@ -70,8 +70,8 @@ const ProyectPage = () => {
   const [deleteSuccess, setDeleteSuccess]=useState(false)
   const [errorDelete, setErrorDelete]=useState(false)
   const [role, setRole]=useState<Role[]>([])
-  const [userProjects, setUserProjects]=useState<UserProject | null>(null)
-  
+  const [userProjects, setUserProjects]=useState<UserProject[]>([])
+
   const fetchProjects = async () => {
         setLoadingProjects(true)
         try {
@@ -143,7 +143,7 @@ const ProyectPage = () => {
       }
     }
     fetchUser()
-    const fetchUserProyects=async()=>{
+/*     const fetchUserProyects=async()=>{
       try {
         setLoading(true)
         const response= await axios.get('http://localhost:8000/api/users/proyects', {
@@ -158,7 +158,7 @@ const ProyectPage = () => {
         setLoading(false)
       }
     }
-    fetchUserProyects()
+    fetchUserProyects() */
     }, [])
 
     const loadProjectData = (project: Proyect) => {
@@ -352,7 +352,7 @@ const ProyectPage = () => {
                           <strong>Estado:</strong> {p.status}
                         </h2>
                         <h2>
-                          <strong>Fecha de Inicio:</strong> {p.startDate?.slice(0, 10)}
+                          <strong>Fecha de Inicio:</strong> {p.startDate?.slice(0, 10) || 'Pendiente por definir'}
                         </h2>
                         <h2>
                           <strong>Fecha de Finalización:</strong> {p.endDate?.slice(0,10) || 'Pendiente por definir'}
