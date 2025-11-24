@@ -1,6 +1,6 @@
 import Sidebar from "@/components/SideBar"
 import { Button } from "@/components/ui/button"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useTransition } from "react"
 import { Dialog, DialogClose, DialogContent,  DialogHeader, DialogTrigger, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import axios from "axios"
@@ -8,20 +8,26 @@ import { Loader2 } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircleIcon, CheckCircle2Icon, Search, Pencil, Trash } from "lucide-react"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 
 
 type Proyect = {
   id: string
   name: string
   description: string
-  status: string      
+  status: string
+  objectives: string[]
+  problems: string
+  summary: string
+  cycle: string
+  academic_period: string      
   startDate?: string | null
   endDate?: string | null
   careerId: string
   skillsId?: string | null
   createdAt?: string
   updatedAt?: string 
-  createdBy?: string 
+  createdBy?: string
 }
 
 type Career ={
@@ -67,12 +73,16 @@ const ProyectPage = () => {
   const [user, setUser]=useState<User | null>(null)
   const userId=localStorage.getItem('id')
   const [skills, setSkills]=useState<Skill[]>([])
+  const [summary, setSummary]=useState('')
+  const [cycle, setCycle]=useState('')
+  const [objectives, setObjectives] = useState<string[]>([])
+  const [academicPeriod, setAcademicPeriod]=useState('')
   const [search, setSearch] = useState("")
   const [selectedProject, setSelectedProject] = useState<Proyect | null>(null);
   const [deleteSuccess, setDeleteSuccess]=useState(false)
   const [errorDelete, setErrorDelete]=useState(false)
   const [role, setRole]=useState<Role[]>([])
-  const [userProjects, setUserProjects]=useState<UserProject[]>([])
+/*   const [userProjects, setUserProjects]=useState<UserProject[]>([]) */
 
   const fetchProjects = async () => {
         setLoadingProjects(true)
@@ -168,8 +178,8 @@ const ProyectPage = () => {
         setProjectName(project.name);
         setDescription(project.description);
         setCareerId(project.careerId);
-        setStartDate(project.startDate)
-        setEndDate(project.endDate)
+/*         setStartDate(project.startDate);
+        setEndDate(project.endDate) */
       };
 
     const handleDeleteProyect=async(id: string)=>{
@@ -200,6 +210,7 @@ const ProyectPage = () => {
             name: projectName,
             description,
             careerId,
+            objectives,
             startDate: startDate ? new Date(startDate).toISOString() : null,
             endDate: endDate ? new Date(endDate).toISOString() : null,
           });
@@ -223,6 +234,10 @@ const ProyectPage = () => {
           name: projectName,
           description,
           careerId,
+          summary,
+          cycle,
+          academic_period: academicPeriod,
+          objectives,
           startDate: startDate ? new Date(startDate).toISOString() : null,
           endDate: endDate ? new Date(endDate).toISOString() : null,
         }
@@ -272,7 +287,7 @@ const ProyectPage = () => {
                 </Button>
               </DialogTrigger>
 
-              <DialogContent className="sm:max-w-md bg-gray-800">
+              <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto bg-gray-800 rounded-xl p-6 ">
                 <DialogHeader>
                   <DialogTitle className="text-l font-black">Añadir Proyecto</DialogTitle>
                 </DialogHeader>
@@ -288,11 +303,46 @@ const ProyectPage = () => {
                     placeholder="Descripción del proyecto"
                     onChange={(e) => setDescription(e.target.value)}
                   />
+                  <Label className="text-bold">Resumen</Label>
+                  <Input
+                    className="w-full px-3 py-2 rounded-md bg-gray-800 border border-gray-700 text-white"
+                    placeholder="Resumen del proyecto"
+                    onChange={(e) => setSummary(e.target.value)}
+                  />
+                  <Label className="text-bold">Ciclo Académico</Label>
+                  <select 
+                  className="w-full text-xs p-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-cyan-400 focus:ring-cyan-400" 
+                  value={cycle}
+                  onChange={(e)=>setCycle(e.target.value)}
+                  >
+                    <option>ㅤㅤ</option>
+                    <option>Primer Ciclo</option>
+                    <option> Segundo Ciclo</option>
+                    <option>Tercer Ciclo</option>
+                    <option>Cuarto Ciclo</option>
+                  </select>
+                  <Label className="text-bold">Periodo Académico</Label>
+                  <Input
+                    className="w-full px-3 py-2 rounded-md bg-gray-800 border border-gray-700 text-white"
+                    placeholder="Marzo 2025 - Agosto 2025"
+                    onChange={(e) => setAcademicPeriod(e.target.value)}
+                  />
+                  <Label className="text-bold">Objetivos</Label>
+                    <Textarea
+                      className="bg-gray-800 border border-gray-700 text-white"
+                      placeholder="Escribe cada objetivo en una línea"
+                      onChange={(e) => {
+                        const lines = e.target.value
+                          .split("\n")
+                          .map(l => l.trim())
+                          .filter(l => l.length > 0);
+                        setObjectives(lines);
+                      }}
+                    />
                   <Label className="text-bold">Fecha de Inicio</Label>
                   <Input
-                  type="date"
+                    type="date"
                     className="w-full px-3 py-2 rounded-md bg-gray-800 border border-gray-700 text-white"
-                    placeholder="Descripción del proyecto"
                     onChange={(e) => setStartDate(e.target.value)}
                   />
                   <Label className="text-bold">Fecha de Finalización</Label>
@@ -302,16 +352,15 @@ const ProyectPage = () => {
                     type="date"
                     onChange={(e) => setEndDate(e.target.value)}
                   />
- 
                <Label>Carrera</Label>
-                <select className="w-full p-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-cyan-400 focus:ring-cyan-400" value={careerId} onChange={(e)=>setCareerId(e.target.value)}>
+                <select className="w-full text-xs p-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-cyan-400 focus:ring-cyan-400" value={careerId} onChange={(e)=>setCareerId(e.target.value)}>
                   <option value="">ㅤㅤ</option>
                   {careers.map(c=>(
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
                 <Label>Habilidades y/o tecnologías</Label>
-                  <select className="w-full p-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-cyan-400 focus:ring-cyan-400" value={careerId} onChange={(e)=>setCareerId(e.target.value)}>
+                  <select className="w-full text-xs p-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-cyan-400 focus:ring-cyan-400" value={careerId} onChange={(e)=>setCareerId(e.target.value)}>
                   <option value="">ㅤㅤ</option>
                   {skills.map(skill=>(
                     <option key={skill.id} value={skill.id}>{skill.description}</option>
@@ -347,7 +396,8 @@ const ProyectPage = () => {
               .filter((p) =>
                 p.name.toLowerCase().includes(search.toLowerCase()) ||
                 p.description.toLowerCase().includes(search.toLowerCase()) ||
-                p.skillsId?.toLowerCase().includes(search.toLowerCase())
+                p.skillsId?.toLowerCase().includes(search.toLowerCase()) /* ||
+                p.status?.toLowerCase().includes(search.toLowerCase()) */
               )
               .map((p) => {
                 const careerName = careers.find((c) => c.id === p.careerId)?.name;
@@ -378,7 +428,7 @@ const ProyectPage = () => {
                           <strong>Fecha de Finalización:</strong> {p.endDate?.slice(0,10) || 'Pendiente por definir'}
                         </h2>
                         <h2>
-                          <strong></strong>{}
+                          <strong>Objetivos: <br /> </strong>{p.objectives}
                         </h2>
                       </div>
 
@@ -432,57 +482,110 @@ const ProyectPage = () => {
                             </Button>
                           </DialogTrigger>
 
-                          <DialogContent className="sm:max-w-md bg-gray-800">
-                            <DialogHeader>
-                              <DialogTitle className="font-semibold text-lg">
-                                Editar Proyecto
-                              </DialogTitle>
-                            </DialogHeader>
+                          <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto bg-gray-800 rounded-xl p-6 ">
+                              <DialogHeader>
+                                <DialogTitle className="font-semibold text-lg">
+                                  Editar Proyecto
+                                </DialogTitle>
+                              </DialogHeader>
 
-                            <div className="grid gap-3 py-3">
-                              <Label>Nombre del proyecto</Label>
-                              <Input
-                                className="bg-gray-900 border-gray-700 text-white"
-                                value={projectName}
-                                onChange={(e) => setProjectName(e.target.value)}
-                              />
+                              <div className="grid gap-3 py-3">
 
-                              <Label>Descripción</Label>
-                              <Input
-                                className="bg-gray-900 border-gray-700 text-white"
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                              />
-                              <Label>Fecha de Inicio</Label>
-                              <Input
-                                className="bg-gray-900 border-gray-700 text-white"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                type="date"
-                              />
-                              <Label>Fecha de Finalización</Label>
-                              <Input
-                                className="bg-gray-900 border-gray-700 text-white"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                type="date"
-                              />
-                            </div>
+                                <Label>Nombre del proyecto</Label>
+                                <Input
+                                  className="bg-gray-900 border-gray-700 text-white"
+                                  value={projectName}
+                                  onChange={(e) => setProjectName(e.target.value)}
+                                />
 
-                            <DialogFooter>
-                              <DialogClose asChild>
-                                <Button className="bg-red-600 hover:bg-red-800 cursor-pointer">
-                                  Cancelar
+                                <Label>Descripción</Label>
+                                <Input
+                                  className="bg-gray-900 border-gray-700 text-white"
+                                  value={description}
+                                  onChange={(e) => setDescription(e.target.value)}
+                                />
+
+                                <Label>Resumen</Label>
+                                <Input
+                                  className="bg-gray-900 border-gray-700 text-white"
+                                  value={summary}
+                                  onChange={(e) => setSummary(e.target.value)}
+                                />
+
+                                <Label>Ciclo Académico</Label>
+                                <select
+                                  className="w-full p-2 rounded-md bg-gray-700 text-white border border-gray-600"
+                                  value={cycle}
+                                  onChange={(e) => setCycle(e.target.value)}
+                                >
+                                  <option>Primer Ciclo</option>
+                                  <option>Segundo Ciclo</option>
+                                  <option>Tercer Ciclo</option>
+                                  <option>Cuarto Ciclo</option>
+                                </select>
+
+                                <Label>Periodo Académico</Label>
+                                <Input
+                                  className="bg-gray-900 border-gray-700 text-white"
+                                  value={academicPeriod}
+                                  type="date"
+                                  onChange={(e) => setAcademicPeriod(e.target.value)}
+                                />
+
+                                <Label>Fecha de Inicio</Label>
+                                <Input
+                                  className="bg-gray-900 border-gray-700 text-white"
+                                  value={startDate}
+                                  onChange={(e) => setStartDate(e.target.value)}
+                                  type="date"
+                                />
+
+                                <Label>Fecha de Finalización</Label>
+                                <Input
+                                  className="bg-gray-900 border-gray-700 text-white"
+                                  value={endDate}
+                                  onChange={(e) => setEndDate(e.target.value)}
+                                  type="date"
+                                />
+
+                                <Label>Carrera</Label>
+                                <select
+                                  className="w-full p-2 rounded-md bg-gray-700 text-white border border-gray-600"
+                                  value={careerId}
+                                  onChange={(e) => setCareerId(e.target.value)}
+                                >
+                                  {careers.map((c) => (
+                                    <option key={c.id} value={c.id}>
+                                      {c.name}
+                                    </option>
+                                  ))}
+                                </select>
+
+                                <Label>Objetivos (uno por línea)</Label>
+                                <textarea
+                                  className="w-full p-2 rounded-md bg-gray-700 text-white border border-gray-600 h-24"
+                                  value={objectives.join("\n")}
+                                  onChange={(e) =>
+                                    setObjectives(e.target.value.split("\n").filter((o) => o.trim() !== ""))
+                                  }
+                                />
+                              </div>
+
+                              <DialogFooter>
+                                <DialogClose asChild>
+                                  <Button className="bg-red-600 hover:bg-red-800 cursor-pointer">
+                                    Cancelar
+                                  </Button>
+                                </DialogClose>
+
+                                <Button
+                                  className="bg-green-600 hover:bg-green-800 cursor-pointer"
+                                  onClick={() => handleEditProyect(p.id)}
+                                >
+                                  Editar
                                 </Button>
-                              </DialogClose>
-                              <Button
-                                className="bg-green-600 hover:bg-green-800 cursor-pointer"
-                                onClick={() => handleEditProyect(p.id)}
-                              >
-                                Editar
-                              </Button>
-                            </DialogFooter>
-                          </DialogContent>
+                              </DialogFooter>
+                            </DialogContent>
                         </Dialog>
                       </div>
                     </div>
