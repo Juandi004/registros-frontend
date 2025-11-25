@@ -1,6 +1,6 @@
 import Sidebar from "@/components/SideBar"
 import { Button } from "@/components/ui/button"
-import { useEffect, useState, useTransition } from "react"
+import { useEffect, useState } from "react"
 import { Dialog, DialogClose, DialogContent,  DialogHeader, DialogTrigger, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import axios from "axios"
@@ -75,14 +75,15 @@ const ProyectPage = () => {
   const [skills, setSkills]=useState<Skill[]>([])
   const [summary, setSummary]=useState('')
   const [cycle, setCycle]=useState('')
-  const [objectives, setObjectives] = useState<string[]>([])
+  const [objectives, setObjectives] = useState<string[]>([]);
+  const [objectivesText, setObjectivesText] = useState<string>("");
   const [academicPeriod, setAcademicPeriod]=useState('')
   const [search, setSearch] = useState("")
   const [selectedProject, setSelectedProject] = useState<Proyect | null>(null);
   const [deleteSuccess, setDeleteSuccess]=useState(false)
   const [errorDelete, setErrorDelete]=useState(false)
   const [role, setRole]=useState<Role[]>([])
-/*   const [userProjects, setUserProjects]=useState<UserProject[]>([]) */
+  const [userProjects, setUserProjects]=useState<UserProject[]>([]) 
 
   const fetchProjects = async () => {
         setLoadingProjects(true)
@@ -96,6 +97,15 @@ const ProyectPage = () => {
         }
         setLoadingProjects(false)
       }
+
+  const fetchUserProyect = async () => {
+    try {
+      const req = await axios.get(`http://localhost:8000/api/user-projects/user/${userId}`)
+      setUserProjects(req.data.data)
+    } catch (error) {
+      console.log('Error al obtener proyectos del usuario', error)
+    }
+  }
 
 /*     const fetchSkills=async()=>{
       try {
@@ -124,6 +134,7 @@ const ProyectPage = () => {
 
       fetchCareers()
       fetchProjects()
+      fetchUserProyect()
     const fetchRole = async()=>{
         setLoading(true)
         try {
@@ -178,8 +189,13 @@ const ProyectPage = () => {
         setProjectName(project.name);
         setDescription(project.description);
         setCareerId(project.careerId);
-/*         setStartDate(project.startDate);
-        setEndDate(project.endDate) */
+        setStartDate(project.startDate ?? "");
+        setEndDate(project.endDate ?? "")
+        setObjectives(project.objectives);                 
+        setObjectivesText(project.objectives.join("\n"));
+        setAcademicPeriod(project.academic_period)
+        setCycle(project.cycle)
+        setSummary(project.summary)
       };
 
     const handleDeleteProyect=async(id: string)=>{
@@ -292,19 +308,19 @@ const ProyectPage = () => {
                   <DialogTitle className="text-l font-black">Añadir Proyecto</DialogTitle>
                 </DialogHeader>
                   <Label className="text-bold">Nombre del proyecto</Label>
-                  <Input
+                  <Textarea
                     className="w-full px-3 py-2 rounded-md bg-gray-800 border border-gray-700 text-white"
                     placeholder="Nombre del proyecto"
                     onChange={(e) => setProjectName(e.target.value)}
                   />
                   <Label className="text-bold">Descripción del proyecto</Label>
-                  <Input
+                  <Textarea
                     className="w-full px-3 py-2 rounded-md bg-gray-800 border border-gray-700 text-white"
                     placeholder="Descripción del proyecto"
                     onChange={(e) => setDescription(e.target.value)}
                   />
                   <Label className="text-bold">Resumen</Label>
-                  <Input
+                  <Textarea
                     className="w-full px-3 py-2 rounded-md bg-gray-800 border border-gray-700 text-white"
                     placeholder="Resumen del proyecto"
                     onChange={(e) => setSummary(e.target.value)}
@@ -377,6 +393,7 @@ const ProyectPage = () => {
           </div>
 
           <h3 className="text-white">Gestiona todos los proyectos PIENSA de las carreras del ITS Sudamericano</h3>
+          <h2>{userId}</h2>
           {/* <h4 className="text-white mb-4">Proyectos Disponibles</h4> */}
 
           {loadingProjects ? (
@@ -419,6 +436,9 @@ const ProyectPage = () => {
                           <strong>Carrera:</strong> {careerName || "Sin carrera"}
                         </h2>
                         <h2>
+                          <strong>Resumen:</strong>{p.summary}
+                        </h2>
+                        <h2>
                           <strong>Estado:</strong> {p.status}
                         </h2>
                         <h2>
@@ -428,7 +448,11 @@ const ProyectPage = () => {
                           <strong>Fecha de Finalización:</strong> {p.endDate?.slice(0,10) || 'Pendiente por definir'}
                         </h2>
                         <h2>
-                          <strong>Objetivos: <br /> </strong>{p.objectives}
+                          <strong>Objetivos: <br /> </strong>{p.objectives.map((o, i)=>(
+                            <ul>
+                              <li key={i}>{o}</li>
+                            </ul>
+                          ))}
                         </h2>
                       </div>
 
@@ -481,7 +505,6 @@ const ProyectPage = () => {
                               <Pencil className="w-5 h-5" />
                             </Button>
                           </DialogTrigger>
-
                           <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto bg-gray-800 rounded-xl p-6 ">
                               <DialogHeader>
                                 <DialogTitle className="font-semibold text-lg">
@@ -492,21 +515,21 @@ const ProyectPage = () => {
                               <div className="grid gap-3 py-3">
 
                                 <Label>Nombre del proyecto</Label>
-                                <Input
+                                <Textarea
                                   className="bg-gray-900 border-gray-700 text-white"
                                   value={projectName}
                                   onChange={(e) => setProjectName(e.target.value)}
                                 />
 
                                 <Label>Descripción</Label>
-                                <Input
+                                <Textarea
                                   className="bg-gray-900 border-gray-700 text-white"
                                   value={description}
                                   onChange={(e) => setDescription(e.target.value)}
                                 />
 
                                 <Label>Resumen</Label>
-                                <Input
+                                <Textarea
                                   className="bg-gray-900 border-gray-700 text-white"
                                   value={summary}
                                   onChange={(e) => setSummary(e.target.value)}
@@ -514,7 +537,7 @@ const ProyectPage = () => {
 
                                 <Label>Ciclo Académico</Label>
                                 <select
-                                  className="w-full p-2 rounded-md bg-gray-700 text-white border border-gray-600"
+                                  className="w-full text-xs p-2 rounded-md bg-gray-700 text-white border border-gray-600"
                                   value={cycle}
                                   onChange={(e) => setCycle(e.target.value)}
                                 >
@@ -528,7 +551,6 @@ const ProyectPage = () => {
                                 <Input
                                   className="bg-gray-900 border-gray-700 text-white"
                                   value={academicPeriod}
-                                  type="date"
                                   onChange={(e) => setAcademicPeriod(e.target.value)}
                                 />
 
@@ -550,7 +572,7 @@ const ProyectPage = () => {
 
                                 <Label>Carrera</Label>
                                 <select
-                                  className="w-full p-2 rounded-md bg-gray-700 text-white border border-gray-600"
+                                  className="w-full text-xs p-2 rounded-md bg-gray-700 text-white border border-gray-600"
                                   value={careerId}
                                   onChange={(e) => setCareerId(e.target.value)}
                                 >
@@ -562,13 +584,19 @@ const ProyectPage = () => {
                                 </select>
 
                                 <Label>Objetivos (uno por línea)</Label>
-                                <textarea
-                                  className="w-full p-2 rounded-md bg-gray-700 text-white border border-gray-600 h-24"
-                                  value={objectives.join("\n")}
-                                  onChange={(e) =>
-                                    setObjectives(e.target.value.split("\n").filter((o) => o.trim() !== ""))
-                                  }
-                                />
+                                  <Textarea
+                                    value={objectivesText}
+                                    onChange={(e) => {
+                                      const text = e.target.value;
+                                      setObjectivesText(text);
+                                      setObjectives(
+                                        text
+                                          .split("\n")
+                                          .map((l) => l.trim())
+                                          .filter((l) => l.length > 0)
+                                      );
+                                    }}
+                                  />
                               </div>
 
                               <DialogFooter>
