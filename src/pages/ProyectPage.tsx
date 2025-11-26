@@ -393,7 +393,6 @@ const ProyectPage = () => {
           </div>
 
           <h3 className="text-white">Gestiona todos los proyectos PIENSA de las carreras del ITS Sudamericano</h3>
-          <h2>{userId}</h2>
           {/* <h4 className="text-white mb-4">Proyectos Disponibles</h4> */}
 
           {loadingProjects ? (
@@ -448,11 +447,12 @@ const ProyectPage = () => {
                           <strong>Fecha de Finalización:</strong> {p.endDate?.slice(0,10) || 'Pendiente por definir'}
                         </h2>
                         <h2>
-                          <strong>Objetivos: <br /> </strong>{p.objectives.map((o, i)=>(
-                            <ul>
+                          <strong>Objetivos: <br /> </strong>
+                          <ul className="list-disc ml-5">
+                          {p.objectives.map((o, i)=>(
                               <li key={i}>{o}</li>
-                            </ul>
                           ))}
+                          </ul>          
                         </h2>
                       </div>
 
