@@ -80,7 +80,7 @@ const Sidebar = () => {
         <nav className="flex flex-col gap-1 p-3 mt-4">
           <NavItem to="/dashboard" icon={<Home />} label="Dashboard" />
           <NavItem to="/profile" icon={<User />} label="Perfil" />
-          <NavItem to="/proyects" icon={<Settings />} label="Proyectos" />
+          <NavItem to="/projects" icon={<Settings />} label="Proyectos" />
 
         <div className="py-7">
           {isLogged && (

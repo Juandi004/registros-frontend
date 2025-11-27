@@ -2,130 +2,123 @@ import SideBar from "@/components/SideBar"
 import axios from "axios"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Card, CardTitle, CardContent } from "@/components/ui/card"
-import avatar from "../assets/avatar.png"
-import { Loader2 } from "lucide-react"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import avatarPlaceholder from "../assets/avatar.png"
+import { Loader2, Mail, GraduationCap, Shield, User } from "lucide-react"
 
-const UserProfile = () => {
-  type User={
-  name: string,
+type UserData = {
+  name: string
+  email: string
   careerId: string
-  avatar: string,
-  email: string;
-  roleId: string;
+  roleId: string
+  avatar?: string
 }
 
-type Career={
-    id: string
-    name: string
-  }
+type Career = { id: string; name: string }
+type Role = { id: string; name: string }
 
-  type Role = {
-    id: string,
-    name: string
-  }
-  const navigate=useNavigate()
-
-  const [loading, setLoading] = useState(false)
-  const [user, setUser] = useState<User | null>(null)
+const UserProfile = () => {
+  const navigate = useNavigate()
   const accessToken = localStorage.getItem('token')
-  const userId=localStorage.getItem('id')
-  const [careers, setCareers]=useState<Career[]>([])
-  const [role, setRole]=useState<Role[]>([])
+  const userId = localStorage.getItem('id')
+
+  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<UserData | null>(null)
+  const [careerName, setCareerName] = useState("Cargando...")
+  const [roleName, setRoleName] = useState("Cargando...")
 
   useEffect(() => {
-      if (!accessToken || !userId) {
+    if (!accessToken || !userId) {
       navigate("/login")
       return
-  } 
-    const fetchData = async () => {
+    }
+    const loadProfile = async () => {
+      setLoading(true)
       try {
-        setLoading(true)
-        const response = await axios.get(`http://localhost:8000/api/users/${userId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`
-          }
-        })
-        setUser(response.data)
+        const headers = { Authorization: `Bearer ${accessToken}` }
+        const userRes = await axios.get(`http://localhost:8000/api/users/${userId}`, { headers })
+        const userData = userRes.data
+        setUser(userData)
+        const [careersRes, rolesRes] = await Promise.all([
+          axios.get("http://localhost:8000/api/careers", { headers }),
+          axios.get("http://localhost:8000/api/roles", { headers })
+        ])
+        const foundCareer = careersRes.data.data.find((c: Career) => c.id === userData.careerId)
+        const foundRole = rolesRes.data.data.find((r: Role) => r.id === userData.roleId)
+
+        setCareerName(foundCareer ? foundCareer.name : "Sin asignar")
+        setRoleName(foundRole ? foundRole.name : "Usuario")
+
       } catch (error) {
-        console.error("Error al obtener datos del usuario:", error)
+        console.error("Error cargando perfil:", error)
       } finally {
         setLoading(false)
       }
     }
-const fetchCareerData=async()=>{
-      setLoading(true)
-      try {
-        const res=await axios.get(`http://localhost:8000/api/careers/`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`
-          }
-        })
-        setCareers(res.data.data)
-        console.log('Carrera del usuario', res.data)
-      } catch (error) {
-        console.log('Error al obtener la carrera')
-      }
-    } 
-        const fetchRole = async()=>{
-        setLoading(true)
-        try {
-          const res = await axios.get('http://localhost:8000/api/roles')
-          console.log('Roles obtenidos', res.data.data)
-          setRole(res.data.data)
-        } catch (error) {
-          console.log('Error al obtener roles')
-        }
-        finally{
-          setLoading(false)
-        }
-      }
-      fetchRole()
-    fetchCareerData()
-    if (userId) {
-      fetchData()
-    }
-/*     if(!career){
-      fetchCareerData()
-    } */
-  }, [userId])
-
-  const careerName = user
-  ? careers.find(c => c.id === user.careerId)?.name
-  : "";
-
-  const roleName = user ? role.find(r=> r.id === user.roleId)?.name: "";
+    loadProfile()
+  }, [userId, accessToken, navigate])
 
   return (
-    <>
+    <div className="flex bg-gray-950 min-h-screen text-gray-100 font-sans">
       <SideBar />
-      <div className="flex-1 ml-0 md:ml-64 p-6 transition-all min-h-screen max-w-screen">
-        {loading && !user ? (
-          <div className="flex flex-col justify-center items-center h-screen">
-            <Loader2 className="w-10 h-10 animate-spin" />
-            <h2 className="mt-4">Cargando...</h2>
-          </div>
-          ) : (
-            <Card className="flex items-center justify-center">
-              <CardTitle>Perfil de Usuario</CardTitle>
-              <CardContent>
-                <ul className="flex flex-col gap-4 p-6 w-150 max-w-screen justify-center items-center">
-                  <div className="avatar">
-                    <div className="bg-gay-800 flex items-center justify-center">
-                      <img src={avatar} className="flex flex-col items-center py-5 border-gray-800" />
-                    </div>
-                  </div>
-                  <h1><strong>Nombre: </strong> {user?.name}</h1>
-                  <h1><strong>Carrera: </strong>{careerName}</h1>
-                  <h1><strong> E-mail:</strong> {user?.email}</h1>
-                  <h1><strong>Rol:</strong> {roleName}</h1>
-                </ul>
-              </CardContent>
-            </Card>
-          )}
 
-      </div>
-    </>
+      <main className="flex-1 ml-0 md:ml-64 p-6 flex items-center justify-center">
+        {loading ? (
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="w-8 h-8 text-cyan-500 animate-spin" />
+            <span className="text-gray-400 text-sm">Cargando perfil...</span>
+          </div>
+        ) : (
+          <Card className="w-full max-w-sm bg-gray-900 border-gray-800 shadow-xl">
+            <CardHeader className="flex flex-col items-center pb-2">
+              <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-800 mb-4 bg-gray-700">
+                <img 
+                  src={avatarPlaceholder} 
+                  alt="Avatar" 
+                  className="w-full h-full object-cover" 
+                />
+              </div>
+              <h2 className="text-2xl font-bold text-white">{user?.name}</h2>
+              <span className="text-cyan-500 font-medium text-sm bg-cyan-950/50 px-3 py-1 rounded-full border border-cyan-900">
+                {roleName}
+              </span>
+            </CardHeader>
+
+            <CardContent className="space-y-4 pt-6">
+              <div className="flex items-center gap-4 p-3 rounded-lg bg-gray-800/50">
+                <div className="bg-gray-700 p-2 rounded-full text-gray-300">
+                  <Mail className="w-5 h-5" />
+                </div>
+                <div className="overflow-hidden">
+                  <p className="text-xs text-gray-500 uppercase font-semibold">Correo</p>
+                  <p className="text-sm text-gray-200 truncate" title={user?.email}>{user?.email}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 p-3 rounded-lg bg-gray-800/50">
+                <div className="bg-gray-700 p-2 rounded-full text-gray-300">
+                  <GraduationCap className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase font-semibold">Carrera</p>
+                  <p className="text-sm text-gray-200">{careerName}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 p-3 rounded-lg bg-gray-800/50">
+                <div className="bg-gray-700 p-2 rounded-full text-gray-300">
+                  <Shield className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase font-semibold">Rol de Usuario</p>
+                  <p className="text-sm text-gray-200 capitalize">{roleName}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </main>
+    </div>
   )
 }
 
