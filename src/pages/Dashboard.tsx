@@ -107,7 +107,7 @@ const Dashboard = () => {
       desc: "Proyectos PIENSA activos"
     },
     { 
-      label: "Usuarios / Estudiantes", 
+      label: "Usuarios / Profesores", 
       value: stats.totalUsers, 
       icon: Users, 
       color: "text-purple-500", 
@@ -179,36 +179,6 @@ const Dashboard = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <Card className="lg:col-span-2 bg-gray-900 border-gray-800 shadow-lg">
-                <CardHeader className="border-b border-gray-800 pb-4">
-                  <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
-                    <GraduationCap className="w-5 h-5 text-yellow-500"/>
-                    Oferta Académica (Carreras)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  {careersList.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {careersList.map((career) => (
-                        <div key={career.id} className="flex items-center p-4 bg-gray-800/50 rounded-lg border border-gray-700/50 hover:bg-gray-800 transition-colors">
-                          <div className="h-10 w-10 rounded-full bg-yellow-500/10 flex items-center justify-center mr-4">
-                            <span className="text-yellow-500 font-bold text-lg">{career.name.charAt(0)}</span>
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-gray-200">{career.name}</h4>
-                            <p className="text-xs text-gray-500">ID: ...{career.id.slice(-6)}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-10 text-gray-500">
-                      <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50"/>
-                      No se encontraron carreras registradas.
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
               <Card className="bg-gray-900 border-gray-800 shadow-lg">
                 <CardHeader className="border-b border-gray-800 pb-4">
                   <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
@@ -241,6 +211,36 @@ const Dashboard = () => {
                   ) : (
                     <div className="p-8 text-center text-gray-500 text-sm">
                       No hay actividad reciente.
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+                            <Card className="lg:col-span-2 bg-gray-900 border-gray-800 shadow-lg">
+                <CardHeader className="border-b border-gray-800 pb-4">
+                  <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
+                    <GraduationCap className="w-5 h-5 text-yellow-500"/>
+                    Oferta Académica (Carreras)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  {careersList.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {careersList.map((career) => (
+                        <div key={career.id} className="flex items-center p-4 bg-gray-800/50 rounded-lg border border-gray-700/50 hover:bg-gray-800 transition-colors">
+                          <div className="h-10 w-10 rounded-full bg-yellow-500/10 flex items-center justify-center mr-4">
+                            <span className="text-yellow-500 font-bold text-lg">{career.name.charAt(0)}</span>
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-gray-200">{career.name}</h4>
+                            <p className="text-xs text-gray-500">ID: ...{career.id.slice(-6)}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-10 text-gray-500">
+                      <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50"/>
+                      No se encontraron carreras registradas.
                     </div>
                   )}
                 </CardContent>

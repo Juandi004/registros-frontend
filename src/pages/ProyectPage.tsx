@@ -337,7 +337,7 @@ const ProyectPage = () => {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 type="text"
-                placeholder="Buscar por nombre, descripción o skill..."
+                placeholder="Buscar por nombre, problemática o skill..."
                 className="pl-10 bg-gray-800 border-gray-700 text-white focus:ring-cyan-500 focus:border-cyan-500"
               />
             </div>
@@ -358,7 +358,7 @@ const ProyectPage = () => {
                     <Textarea className="bg-gray-900 border-gray-600 mt-1" value={projectName} onChange={(e) => setProjectName(e.target.value)} />
                   </div>
                   <div className="md:col-span-2">
-                    <Label className="text-gray-300">Descripción</Label>
+                    <Label className="text-gray-300">Problemática</Label>
                     <Textarea className="bg-gray-900 border-gray-600 mt-1" value={description} onChange={(e) => setDescription(e.target.value)} />
                   </div>
                   <div className="md:col-span-2">
@@ -468,7 +468,7 @@ const ProyectPage = () => {
 
                           <div className="p-6 space-y-4">
                              <div>
-                                <h4 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-1 flex items-center gap-2"><FileText className="w-4 h-4"/> Descripción</h4>
+                                <h4 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-1 flex items-center gap-2"><FileText className="w-4 h-4"/> Problemática</h4>
                                 <p className="text-gray-400 text-sm leading-relaxed line-clamp-3">{p.description}</p>
                              </div>
                              
@@ -554,7 +554,7 @@ const ProyectPage = () => {
                                <TableCell className="py-4 align-top">
                                   <div className="space-y-3">
                                      <div>
-                                        <span className="text-xs font-semibold text-gray-500 uppercase">Descripción</span>
+                                        <span className="text-xs font-semibold text-gray-500 uppercase">Problemática</span>
                                         <p className="text-sm text-gray-300 leading-relaxed line-clamp-3 hover:line-clamp-none transition-all">{p.description}</p>
                                      </div>
                                      {p.summary && (
@@ -611,7 +611,7 @@ const ProyectPage = () => {
                                                     <Textarea className="bg-gray-900 border-gray-600 mt-1" value={projectName} onChange={(e) => setProjectName(e.target.value)}/>
                                                  </div>
                                                  <div className="md:col-span-2">
-                                                    <Label className="text-gray-300">Descripción</Label>
+                                                    <Label className="text-gray-300">Problemática</Label>
                                                     <Textarea className="bg-gray-900 border-gray-600 mt-1" value={description} onChange={(e) => setDescription(e.target.value)}/>
                                                  </div>
                                                  <div className="md:col-span-2">
