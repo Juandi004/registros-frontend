@@ -12,7 +12,7 @@ import { useEffect, useState } from "react"
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTrigger, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import axios from "axios"
-import { Loader2, CalendarIcon, GraduationCap, BookOpen, FileText, Code2, CheckCircle2Icon, Pencil, Trash } from "lucide-react"
+import { Loader2, CalendarIcon, GraduationCap, BookOpen, FileText, Code2, CheckCircle2Icon, Pencil, Trash, Plus } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircleIcon, Search } from "lucide-react"
 import { Label } from "@/components/ui/label"
@@ -51,7 +51,7 @@ type Skill = {
   id: string,
   name: string,
   description: string,
-  details: any
+  details: any 
 }
 
 type ProjectSkill = {
@@ -92,11 +92,19 @@ const ProyectPage = () => {
   const userId = localStorage.getItem('id')
   
   const [search, setSearch] = useState("")
+  const [skillSearch, setSkillSearch]=useState("")
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [deleteSuccess, setDeleteSuccess] = useState(false)
   const [errorDelete, setErrorDelete] = useState(false)
   const [role, setRole] = useState<Role[]>([])
   const [userProjects, setUserProjects] = useState<Project[]>([])
+  
+  const [skillName, setSkillName] = useState('')
+  const [skillDescription, setSkillDescription] = useState('')
+  const [skillLevel, setSkillLevel] = useState("") 
+  const [skillCategory, setSkillCategory] = useState("")
+  const [skillDetails, setSkillDetails] = useState<string[]>([])
+  const [skillDetailsText, setSkillDetailsText] = useState<string>("");
 
   const fetchProjects = async () => {
     setLoadingProjects(true)
@@ -109,6 +117,35 @@ const ProyectPage = () => {
       console.log(error)
     }
     setLoadingProjects(false)
+  }
+
+  const handleCreateSkill = async () => {
+    setLoading(true)
+    try {
+      await axios.post('http://localhost:8000/api/skills', {
+        name: skillName,
+        description: skillDescription,
+        details: JSON.stringify({
+          level: skillLevel,
+          category: skillCategory
+        })
+      })
+      
+      fetchSkillsData(); 
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+      setSkillName("");
+      setSkillDescription("");
+      setSkillLevel("");   
+      setSkillCategory(""); 
+      
+    } catch (error) {
+      console.log('Error al crear skill', error)
+      setErrorAlert(true);
+      setTimeout(() => setErrorAlert(false), 3000);
+    } finally {
+      setLoading(false)
+    }
   }
 
   const fetchSkillsData = async () => {
@@ -204,9 +241,11 @@ const ProyectPage = () => {
     setProjectName(""); setDescription(""); setSummary(""); setCycle("");
     setAcademicPeriod(""); setStartDate(""); setEndDate(""); setCareerId("");
     setObjectives([]); setObjectivesText(""); setSelectedSkills([]);
+    setSkillSearch("");
   }
 
   const loadProjectData = (project: Project) => {
+    setSkillSearch("");
     setSelectedProject(project);
     setProjectName(project.name);
     setDescription(project.description);
@@ -263,7 +302,7 @@ const ProyectPage = () => {
       
       if (skillsToAdd.length > 0) {
         await Promise.all(skillsToAdd.map(skillId => 
-           axios.post('http://localhost:8000/api/porjects-skills', { projectId: id, skillId })
+            axios.post('http://localhost:8000/api/porjects-skills', { projectId: id, skillId })
         ));
       }
 
@@ -299,7 +338,7 @@ const ProyectPage = () => {
 
       if (selectedSkills.length > 0) {
         await Promise.all(selectedSkills.map(skillId => 
-           axios.post('http://localhost:8000/api/porjects-skills', { projectId, skillId })
+            axios.post('http://localhost:8000/api/porjects-skills', { projectId, skillId })
         ));
       }
       setSuccess(true);
@@ -395,9 +434,28 @@ const ProyectPage = () => {
                     </select>
                   </div>
                   <div className="md:col-span-2 bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                    <Label className="text-cyan-400 font-bold mb-3 block flex items-center gap-2"><Code2 className="w-4 h-4"/> Habilidades Requeridas</Label>
+                    <Label className="text-cyan-400 font-bold mb-3 block flex items-center gap-2">
+                      <Code2 className="w-4 h-4"/> Habilidades Requeridas
+                    </Label>
+                    
+                    <div className="relative mb-3">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        value={skillSearch}
+                        onChange={(e) => setSkillSearch(e.target.value)}
+                        type="text"
+                        placeholder="Buscar habilidad..."
+                        className="pl-9 bg-gray-800 border-gray-600 text-white focus:ring-cyan-500 focus:border-cyan-500 text-sm h-9"
+                      />
+                    </div>
+
                     <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-                        {skills.map((skill) => (
+                        {skills
+                        .filter(s => {
+                          const term = skillSearch.toLowerCase()
+                          return s.name.toLowerCase().includes(term)
+                        })
+                        .map((skill) => (
                             <div key={skill.id} 
                                  className={`flex items-center space-x-2 p-2 rounded cursor-pointer border transition-colors ${selectedSkills.includes(skill.id) ? 'bg-cyan-900/40 border-cyan-500' : 'hover:bg-gray-800 border-transparent'}`}
                                  onClick={() => toggleSkillSelection(skill.id)}>
@@ -444,8 +502,8 @@ const ProyectPage = () => {
               {userProjects.length > 0 ? (
                 <>
                   <div className="flex items-center gap-2 mb-4">
-                     <div className="h-8 w-1 bg-cyan-500 rounded-full"></div>
-                     <h2 className="text-xl font-bold text-white">Proyectos registrados por el usuario</h2>
+                      <div className="h-8 w-1 bg-cyan-500 rounded-full"></div>
+                      <h2 className="text-xl font-bold text-white">Proyectos registrados por el usuario</h2>
                   </div>
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                     {userProjects.map((p) => {
@@ -469,7 +527,9 @@ const ProyectPage = () => {
                           <div className="p-6 space-y-4">
                              <div>
                                 <h4 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-1 flex items-center gap-2"><FileText className="w-4 h-4"/> Problemática</h4>
-                                <p className="text-gray-400 text-sm leading-relaxed line-clamp-3">{p.description}</p>
+                                <div className="space-y-3 w-[300px] whitespace-normal">
+                                    <p className="text-gray-400 text-sm leading-relaxed line-clamp-3 hover:line-clamp-none transition-all duration-200 cursor-help break-words">{p.description}</p>
+                                </div>
                              </div>
                              
                              {mySkills.length > 0 && (
@@ -504,15 +564,59 @@ const ProyectPage = () => {
               )}
             </div>
             <div className="bg-gray-800 rounded-xl border border-gray-700 shadow-xl overflow-hidden">
-               <div className="p-4 border-b border-gray-700 bg-gray-900/30">
+               <div className="p-4 border-b border-gray-700 bg-gray-900/30 flex justify-between items-center">
                   <h2 className="text-lg font-bold text-white">Directorio Completo de Proyectos</h2>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button className="bg-green-600 hover:bg-green-700 text-white font-semibold flex items-center gap-2 text-sm">
+                        <Plus className="w-4 h-4"/> Nueva Skill
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-gray-800 border-gray-700 text-white">
+                      <DialogHeader><DialogTitle>Crear Skill</DialogTitle></DialogHeader>
+                      <div className="space-y-3 py-4">
+                          <div>
+                              <Label>Nombre</Label>
+                              <Input onChange={(e)=>setSkillName(e.target.value)} placeholder="Ej: Python" className="bg-gray-900 border-gray-600 mt-1" value={skillName}/>
+                          </div>
+                          <div>
+                              <Label>Descripción</Label>
+                              <Input onChange={(e)=>setSkillDescription(e.target.value)} placeholder="Descripción breve" className="bg-gray-900 border-gray-600 mt-1" value={skillDescription}/>
+                          </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label>Nivel (Level)</Label>
+                                    <Input 
+                                        value={skillLevel}
+                                        onChange={(e) => setSkillLevel(e.target.value)}
+                                        placeholder="Ej: Beginner to Advanced"
+                                        className="bg-gray-900 border-gray-600 mt-1" 
+                                    />
+                                </div>
+                                <div>
+                                    <Label>Categoría (Category)</Label>
+                                    <Input 
+                                        value={skillCategory}
+                                        onChange={(e) => setSkillCategory(e.target.value)}
+                                        placeholder="Ej: Programming Language"
+                                        className="bg-gray-900 border-gray-600 mt-1" 
+                                    />
+                                </div>
+                            </div>
+                      </div>
+                      <DialogFooter>
+                        <DialogClose asChild><Button variant="ghost" className="hover:bg-gray-700">Cancelar</Button></DialogClose>
+                        <Button className="bg-green-600 hover:bg-green-700" onClick={handleCreateSkill}>Crear</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                </div>
                <div className="overflow-x-auto">
                  <Table>
                    <TableHeader className="bg-gray-900/50">
                      <TableRow className="border-gray-700 hover:bg-gray-900/50">
                        <TableHead className="text-gray-300 font-bold min-w-[250px]">Proyecto & Académico</TableHead>
-                       <TableHead className="text-gray-300 font-bold min-w-[300px]">Detalles & Skills</TableHead>
+                       <TableHead className="text-gray-300 font-bold">Detalles & Skills</TableHead>
                        <TableHead className="text-gray-300 font-bold min-w-[200px]">Objetivos</TableHead>
                        <TableHead className="text-gray-300 font-bold min-w-[150px]">Fechas & Estado</TableHead>
                        <TableHead className="text-gray-300 font-bold text-right">Acciones</TableHead>
@@ -552,34 +656,41 @@ const ProyectPage = () => {
                                   </div>
                                </TableCell>
                                <TableCell className="py-4 align-top">
-                                  <div className="space-y-3">
+                                  <div className="space-y-3 w-[300px] whitespace-normal">
                                      <div>
                                         <span className="text-xs font-semibold text-gray-500 uppercase">Problemática</span>
-                                        <p className="text-sm text-gray-300 leading-relaxed line-clamp-3 hover:line-clamp-none transition-all">{p.description}</p>
+                                        <p className="text-sm text-gray-300 leading-relaxed line-clamp-3 hover:line-clamp-none transition-all duration-200 cursor-help break-words">
+                                            {p.description}
+                                        </p>
                                      </div>
+                                     
                                      {p.summary && (
                                         <div className="bg-gray-900/40 p-2 rounded border border-gray-700/50">
-                                           <span className="text-xs font-semibold text-gray-500 uppercase block mb-1">Resumen</span>
-                                           <p className="text-xs text-gray-400 italic line-clamp-3 hover:line-clamp-none">{p.summary}</p>
+                                            <span className="text-xs font-semibold text-gray-500 uppercase block mb-1">Resumen</span>
+                                            <p className="text-xs text-gray-400 italic line-clamp-2 hover:line-clamp-none transition-all duration-200 cursor-help break-words">
+                                                 {p.summary}
+                                            </p>
                                         </div>
                                      )}
+                                     
                                      {mySkills.length > 0 && (
                                         <div className="flex flex-wrap gap-1 mt-2">
-                                           {mySkills.map(sk => (
-                                             <span key={sk.id} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-cyan-900/30 text-cyan-200 border border-cyan-800">
-                                               {sk.name}
-                                             </span>
-                                           ))}
+                                            {mySkills.map(sk => (
+                                               <span key={sk.id} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-cyan-900/30 text-cyan-200 border border-cyan-800">
+                                                  {sk.name}
+                                               </span>
+                                            ))}
                                         </div>
                                      )}
                                   </div>
                                </TableCell>
+
                                <TableCell className="py-4 align-top">
                                   {p.objectives && p.objectives.length > 0 ? (
                                     <ul className="list-disc pl-4 space-y-1">
-                                       {p.objectives.map((obj, i) => (
-                                          <li key={i} className="text-sm text-gray-400 leading-snug">{obj}</li>
-                                       ))}
+                                         {p.objectives.map((obj, i) => (
+                                            <li key={i} className="text-sm text-gray-400 leading-snug">{obj}</li>
+                                         ))}
                                     </ul>
                                   ) : (
                                     <span className="text-xs text-gray-600 italic">Sin objetivos registrados</span>
@@ -588,7 +699,7 @@ const ProyectPage = () => {
                                <TableCell className="py-4 align-top">
                                   <div className="space-y-3">
                                      <Badge variant="outline" className={`${p.status === 'Finalizado' ? 'text-green-400 border-green-900 bg-green-900/20' : 'text-cyan-400 border-cyan-900 bg-cyan-900/20'}`}>
-                                        {p.status || "N/A"}
+                                         {p.status || "N/A"}
                                      </Badge>
                                      <div className="text-xs text-gray-400">
                                         <div className="mb-1"><span className="text-gray-600">Inicio:</span> <br/>{formatDate(p.startDate)}</div>
@@ -600,84 +711,101 @@ const ProyectPage = () => {
                                   <div className="flex justify-end gap-1">
                                      {(isAdmin || isOwner) && (
                                         <Dialog onOpenChange={(open) => { if(open) loadProjectData(p); else resetForm(); }}>
-                                           <DialogTrigger asChild>
-                                              <Button variant="ghost" size="icon" className="h-8 w-8 text-cyan-500 hover:text-cyan-400 hover:bg-cyan-900/20"><Pencil className="w-4 h-4"/></Button>
-                                           </DialogTrigger>
-                                           <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto bg-gray-800 border-gray-700 text-white">
-                                              <DialogHeader><DialogTitle className="text-xl font-bold text-cyan-400">Editar Proyecto</DialogTitle></DialogHeader>
-                                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-                                                 <div className="md:col-span-2">
-                                                    <Label className="text-gray-300">Nombre</Label>
-                                                    <Textarea className="bg-gray-900 border-gray-600 mt-1" value={projectName} onChange={(e) => setProjectName(e.target.value)}/>
-                                                 </div>
-                                                 <div className="md:col-span-2">
-                                                    <Label className="text-gray-300">Problemática</Label>
-                                                    <Textarea className="bg-gray-900 border-gray-600 mt-1" value={description} onChange={(e) => setDescription(e.target.value)}/>
-                                                 </div>
-                                                 <div className="md:col-span-2">
-                                                    <Label className="text-gray-300">Resumen</Label>
-                                                    <Textarea className="bg-gray-900 border-gray-600 mt-1" value={summary} onChange={(e) => setSummary(e.target.value)}/>
-                                                 </div>
-                                                 <div className="md:col-span-2 bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                                                    <Label className="text-cyan-400 font-bold mb-3 block flex items-center gap-2"><Code2 className="w-4 h-4"/> Habilidades</Label>
-                                                    <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-                                                        {skills.map((skill) => (
-                                                            <div key={skill.id} 
-                                                                 className={`flex items-center space-x-2 p-2 rounded cursor-pointer border transition-colors ${selectedSkills.includes(skill.id) ? 'bg-cyan-900/40 border-cyan-500' : 'hover:bg-gray-800 border-transparent'}`}
-                                                                 onClick={() => toggleSkillSelection(skill.id)}>
-                                                                <div className={`w-4 h-4 rounded border flex items-center justify-center ${selectedSkills.includes(skill.id) ? 'bg-cyan-600 border-cyan-600' : 'border-gray-500'}`}>
-                                                                    {selectedSkills.includes(skill.id) && <CheckCircle2Icon className="w-3 h-3 text-white"/>}
-                                                                </div>
-                                                                <span className="text-sm text-gray-300">{skill.name}</span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                 </div>
-                                                 <div>
-                                                    <Label className="text-gray-300">Ciclo</Label>
-                                                    <select className="w-full mt-1 p-2 rounded-md bg-gray-900 border border-gray-600 text-sm text-white" value={cycle} onChange={(e) => setCycle(e.target.value)}>
-                                                      <option>Primer Ciclo</option>
-                                                      <option>Segundo Ciclo</option>
-                                                      <option>Tercer Ciclo</option>
-                                                      <option>Cuarto Ciclo</option>
-                                                    </select>
-                                                 </div>
-                                                 <div>
-                                                    <Label className="text-gray-300">Periodo</Label>
-                                                    <Input className="bg-gray-900 border-gray-600 mt-1" value={academicPeriod} onChange={(e) => setAcademicPeriod(e.target.value)}/>
-                                                 </div>
-                                                 <div className="md:col-span-2">
-                                                    <Label className="text-gray-300">Objetivos</Label>
-                                                    <Textarea className="bg-gray-900 border-gray-600 mt-1 h-32" value={objectivesText} onChange={(e) => {
-                                                        const text = e.target.value;
-                                                        setObjectivesText(text);
-                                                        setObjectives(text.split("\n").map(l => l.trim()).filter(l => l.length > 0));
-                                                    }}/>
-                                                 </div>
-                                              </div>
-                                              <DialogFooter><Button className="bg-green-600 hover:bg-green-700" onClick={() => handleEditProyect(p.id)}>Guardar Cambios</Button></DialogFooter>
-                                           </DialogContent>
-                                        </Dialog>
+                                            <DialogTrigger asChild>
+                                               <Button variant="ghost" size="icon" className="h-8 w-8 text-cyan-500 hover:text-cyan-400 hover:bg-cyan-900/20"><Pencil className="w-4 h-4"/></Button>
+                                            </DialogTrigger>
+                                            <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto bg-gray-800 border-gray-700 text-white">
+                                               <DialogHeader><DialogTitle className="text-xl font-bold text-cyan-400">Editar Proyecto</DialogTitle></DialogHeader>
+                                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+                                                  <div className="md:col-span-2">
+                                                     <Label className="text-gray-300">Nombre</Label>
+                                                     <Textarea className="bg-gray-900 border-gray-600 mt-1" value={projectName} onChange={(e) => setProjectName(e.target.value)}/>
+                                                  </div>
+                                                  <div className="md:col-span-2">
+                                                     <Label className="text-gray-300">Problemática</Label>
+                                                     <Textarea className="bg-gray-900 border-gray-600 mt-1" value={description} onChange={(e) => setDescription(e.target.value)}/>
+                                                  </div>
+                                                  <div className="md:col-span-2">
+                                                     <Label className="text-gray-300">Resumen</Label>
+                                                     <Textarea className="bg-gray-900 border-gray-600 mt-1" value={summary} onChange={(e) => setSummary(e.target.value)}/>
+                                                  </div>
+                                                  <div className="md:col-span-2 bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                                                     <Label className="text-cyan-400 font-bold mb-3 block flex items-center gap-2"><Code2 className="w-4 h-4"/> Habilidades</Label>
+                                                     
+                                                     <div className="relative mb-3">
+                                                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                                       <Input
+                                                         value={skillSearch}
+                                                         onChange={(e) => setSkillSearch(e.target.value)}
+                                                         type="text"
+                                                         placeholder="Buscar habilidad..."
+                                                         className="pl-9 bg-gray-800 border-gray-600 text-white focus:ring-cyan-500 focus:border-cyan-500 text-sm h-9"
+                                                       />
+                                                     </div>
+
+                                                     <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                                                         {skills
+                                                         .filter(s => {
+                                                            const term = skillSearch.toLowerCase()
+                                                            return s.name.toLowerCase().includes(term)
+                                                         })
+                                                         .map((skill) => (
+                                                             <div key={skill.id} 
+                                                                  className={`flex items-center space-x-2 p-2 rounded cursor-pointer border transition-colors ${selectedSkills.includes(skill.id) ? 'bg-cyan-900/40 border-cyan-500' : 'hover:bg-gray-800 border-transparent'}`}
+                                                                  onClick={() => toggleSkillSelection(skill.id)}>
+                                                                 <div className={`w-4 h-4 rounded border flex items-center justify-center ${selectedSkills.includes(skill.id) ? 'bg-cyan-600 border-cyan-600' : 'border-gray-500'}`}>
+                                                                     {selectedSkills.includes(skill.id) && <CheckCircle2Icon className="w-3 h-3 text-white"/>}
+                                                                 </div>
+                                                                 <span className="text-sm text-gray-300">{skill.name}</span>
+                                                             </div>
+                                                         ))}
+                                                     </div>
+                                                  </div>
+                                                  <div>
+                                                     <Label className="text-gray-300">Ciclo</Label>
+                                                     <select className="w-full mt-1 p-2 rounded-md bg-gray-900 border border-gray-600 text-sm text-white" value={cycle} onChange={(e) => setCycle(e.target.value)}>
+                                                       <option>Primer Ciclo</option>
+                                                       <option>Segundo Ciclo</option>
+                                                       <option>Tercer Ciclo</option>
+                                                       <option>Cuarto Ciclo</option>
+                                                     </select>
+                                                  </div>
+                                                  <div>
+                                                     <Label className="text-gray-300">Periodo</Label>
+                                                     <Input className="bg-gray-900 border-gray-600 mt-1" value={academicPeriod} onChange={(e) => setAcademicPeriod(e.target.value)}/>
+                                                  </div>
+                                                  <div className="md:col-span-2">
+                                                     <Label className="text-gray-300">Objetivos</Label>
+                                                     <Textarea className="bg-gray-900 border-gray-600 mt-1 h-32" value={objectivesText} onChange={(e) => {
+                                                         const text = e.target.value;
+                                                         setObjectivesText(text);
+                                                         setObjectives(text.split("\n").map(l => l.trim()).filter(l => l.length > 0));
+                                                      }}/>
+                                                  </div>
+                                               </div>
+                                               <DialogFooter><Button className="bg-green-600 hover:bg-green-700" onClick={() => handleEditProyect(p.id)}>Guardar Cambios</Button></DialogFooter>
+                                            </DialogContent>
+                                         </Dialog>
                                      )}
                                      {isAdmin && (
                                         <Dialog>
-                                           <DialogTrigger asChild>
-                                              <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-400 hover:bg-red-900/20"><Trash className="w-4 h-4"/></Button>
-                                           </DialogTrigger>
-                                           <DialogContent className="bg-gray-800 border-gray-700 text-white">
-                                              <DialogHeader><DialogTitle>¿Eliminar Proyecto?</DialogTitle></DialogHeader>
-                                              <DialogDescription className="text-gray-400">Esta acción no se puede deshacer.</DialogDescription>
-                                              <DialogFooter>
-                                                 <Button className="bg-red-600 hover:bg-red-700" onClick={() => handleDeleteProyect(p.id)}>Confirmar Eliminación</Button>
-                                              </DialogFooter>
-                                           </DialogContent>
-                                        </Dialog>
+                                            <DialogTrigger asChild>
+                                               <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-400 hover:bg-red-900/20"><Trash className="w-4 h-4"/></Button>
+                                            </DialogTrigger>
+                                            <DialogContent className="bg-gray-800 border-gray-700 text-white">
+                                               <DialogHeader><DialogTitle>¿Eliminar Proyecto?</DialogTitle></DialogHeader>
+                                               <DialogDescription className="text-gray-400">Esta acción no se puede deshacer.</DialogDescription>
+                                               <DialogFooter>
+                                                  <Button className="bg-red-600 hover:bg-red-700" onClick={() => handleDeleteProyect(p.id)}>Confirmar Eliminación</Button>
+                                               </DialogFooter>
+                                            </DialogContent>
+                                         </Dialog>
                                      )}
                                   </div>
                                </TableCell>
                             </TableRow>
                           )
-                       })
+                        })
                      )}
                    </TableBody>
                  </Table>
