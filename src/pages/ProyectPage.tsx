@@ -81,6 +81,7 @@ const ProyectPage = () => {
   const [objectivesText, setObjectivesText] = useState<string>("");
   const [academicPeriod, setAcademicPeriod] = useState('')
   const [careerId, setCareerId] = useState('')
+  const [status, setStatus]=useState('in-progress')
 
   const accessToken = localStorage.getItem("token")
   const [loadingProjects, setLoadingProjects] = useState(false)
@@ -93,6 +94,8 @@ const ProyectPage = () => {
   
   const [search, setSearch] = useState("")
   const [skillSearch, setSkillSearch]=useState("")
+  const [filterStatus, setFilterStatus] = useState("TODOS");
+  const statusOptions = ["TODOS", "in-progress", "completed"];
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [deleteSuccess, setDeleteSuccess] = useState(false)
   const [errorDelete, setErrorDelete] = useState(false)
@@ -103,8 +106,8 @@ const ProyectPage = () => {
   const [skillDescription, setSkillDescription] = useState('')
   const [skillLevel, setSkillLevel] = useState("") 
   const [skillCategory, setSkillCategory] = useState("")
-  const [skillDetails, setSkillDetails] = useState<string[]>([])
-  const [skillDetailsText, setSkillDetailsText] = useState<string>("");
+/*   const [skillDetails, setSkillDetails] = useState<string[]>([])
+  const [skillDetailsText, setSkillDetailsText] = useState<string>(""); */
 
   const fetchProjects = async () => {
     setLoadingProjects(true)
@@ -118,6 +121,22 @@ const ProyectPage = () => {
     }
     setLoadingProjects(false)
   }
+
+    const fetchUserProjects = async () => {
+      if (!userId) return;
+      try {
+        setLoading(true);
+        const response = await axios.get(`http://localhost:8000/api/users-projects/user/${userId}`, {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        const projectsOnly = response.data.map((item: any) => item.project);
+        setUserProjects(projectsOnly);
+      } catch (error) {
+        setUserProjects([]);
+      } finally {
+        setLoading(false);
+      }
+    }
 
   const handleCreateSkill = async () => {
     setLoading(true)
@@ -208,21 +227,7 @@ const ProyectPage = () => {
     }
     fetchUser()
 
-    const fetchUserProjects = async () => {
-      if (!userId) return;
-      try {
-        setLoading(true);
-        const response = await axios.get(`http://localhost:8000/api/users-projects/user/${userId}`, {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        });
-        const projectsOnly = response.data.map((item: any) => item.project);
-        setUserProjects(projectsOnly);
-      } catch (error) {
-        setUserProjects([]);
-      } finally {
-        setLoading(false);
-      }
-    }
+    fetchProjects()
     fetchUserProjects()
   }, [])
 
@@ -257,6 +262,7 @@ const ProyectPage = () => {
     setAcademicPeriod(project.academic_period)
     setCycle(project.cycle)
     setSummary(project.summary)
+    setStatus(project.status)
 
     const existingSkillIds = projectSkills
       .filter(ps => ps.projectId === project.id)
@@ -291,6 +297,7 @@ const ProyectPage = () => {
         cycle,
         academic_period: academicPeriod,
         objectives,
+        status,
         startDate: startDate ? new Date(startDate).toISOString() : null,
         endDate: endDate ? new Date(endDate).toISOString() : null,
       });
@@ -345,6 +352,7 @@ const ProyectPage = () => {
       setTimeout(() => setSuccess(false), 3000);
       resetForm();
       await fetchProjects();
+      await fetchUserProjects();
       await fetchSkillsData();
     } catch (error) {
       setErrorAlert(true);
@@ -370,17 +378,35 @@ const ProyectPage = () => {
           </div>
           
           <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                type="text"
-                placeholder="Buscar por nombre, problemática o skill..."
-                className="pl-10 bg-gray-800 border-gray-700 text-white focus:ring-cyan-500 focus:border-cyan-500"
-              />
-            </div>
-            
+            <div className="flex flex-col gap-3 w-full sm:w-auto">
+              <div className="relative w-full sm:w-80">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  type="text"
+                  placeholder="Buscar por nombre, problemática o skill..."
+                  className="pl-10 bg-gray-800 border-gray-700 text-white focus:ring-cyan-500 focus:border-cyan-500"
+                />
+              </div>
+              <h5 className="text-xs text-cyan-400/80">Filtrar por estado del proyecto</h5>
+              <div className="flex flex-wrap gap-2">
+                {statusOptions.map((status) => (
+                  <Badge
+                    key={status}
+                    onClick={() => setFilterStatus(status)}
+                    variant={filterStatus === status ? "default" : "outline"}
+                    className={`cursor-pointer px-3 py-1 transition-all ${
+                      filterStatus === status
+                        ? "bg-cyan-600 hover:bg-cyan-700 text-white border-cyan-600" 
+                        : "text-gray-400 border-gray-600 hover:border-cyan-500 hover:text-cyan-400" 
+                    }`}
+                  >
+                    {status}
+                  </Badge>
+                ))}
+              </div>
+            </div>  
             <Dialog onOpenChange={(open) => { if(!open) resetForm() }}>
               <DialogTrigger asChild>
                 <Button className="bg-cyan-600 hover:bg-cyan-700 text-white font-semibold shadow-lg shadow-cyan-900/20" onClick={resetForm}>
@@ -434,7 +460,7 @@ const ProyectPage = () => {
                     </select>
                   </div>
                   <div className="md:col-span-2 bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                    <Label className="text-cyan-400 font-bold mb-3 block flex items-center gap-2">
+                    <Label className="text-cyan-400 font-bold mb-3 block items-center gap-2">
                       <Code2 className="w-4 h-4"/> Habilidades Requeridas
                     </Label>
                     
@@ -481,6 +507,14 @@ const ProyectPage = () => {
                       }}
                     />
                   </div>
+                  <div className="md:col-span-2">
+                    <Label className="text-gray-300">Estado del proyecto </Label>
+                      <select className="w-full mt-1 p-2 rounded-md bg-gray-900 border border-gray-600 text-sm text-white" value={status} onChange={(e) => setStatus(e.target.value)}>
+                          <option>Selecciona un estado...</option>
+                          <option>in-progress</option>
+                          <option>completed</option>
+                      </select>
+                  </div>
                 </div>
                 <DialogFooter>
                   <DialogClose asChild><Button variant="ghost" className="hover:bg-gray-700">Cancelar</Button></DialogClose>
@@ -499,7 +533,7 @@ const ProyectPage = () => {
         ) : (
           <div className="space-y-10">
             <div>
-              {userProjects.length > 0 ? (
+{/*               {userProjects.length > 0 ? (
                 <>
                   <div className="flex items-center gap-2 mb-4">
                       <div className="h-8 w-1 bg-cyan-500 rounded-full"></div>
@@ -561,7 +595,7 @@ const ProyectPage = () => {
                 <div className="bg-gray-800/50 border border-gray-700 border-dashed rounded-xl p-8 text-center">
                   <p className="text-gray-400 text-lg italic">El usuario no tiene proyectos registrados.</p>
                 </div>
-              )}
+              )} */}
             </div>
             <div className="bg-gray-800 rounded-xl border border-gray-700 shadow-xl overflow-hidden">
                <div className="p-4 border-b border-gray-700 bg-gray-900/30 flex justify-between items-center">
@@ -628,16 +662,18 @@ const ProyectPage = () => {
                          <TableCell colSpan={5} className="text-center h-32 text-gray-500">No se encontraron proyectos.</TableCell>
                        </TableRow>
                      ) : (
-                       projects.filter(p => {
-                          const term = search.toLowerCase();
-                          const projectSkillsList = getProjectSkillsDisplay(p.id);
-                          const hasSkill = projectSkillsList.some(s => s.name.toLowerCase().includes(term));
-                          return (
-                            (p.name && p.name.toLowerCase().includes(term)) ||
-                            (p.description && p.description.toLowerCase().includes(term)) ||
-                            hasSkill
-                          );
-                       }).map((p) => {
+                      projects.filter(p => {
+                        const term = search.toLowerCase();
+                        const projectSkillsList = getProjectSkillsDisplay(p.id);
+                        const hasSkill = projectSkillsList.some(s => s.name.toLowerCase().includes(term));
+                        const matchesSearch = (
+                          (p.name && p.name.toLowerCase().includes(term)) ||
+                          (p.description && p.description.toLowerCase().includes(term)) ||
+                          hasSkill
+                        );
+                        const matchesStatus = filterStatus === "TODOS" || p.status === filterStatus;
+                        return matchesSearch && matchesStatus;
+                      }).map((p) => {
                           const careerName = careers.find((c) => c.id === p.careerId)?.name;
                           const isAdmin = roleName === "ADMIN";
                           const isOwner = userProjects.some((up) => up.id === p.id);
@@ -659,7 +695,7 @@ const ProyectPage = () => {
                                   <div className="space-y-3 w-[300px] whitespace-normal">
                                      <div>
                                         <span className="text-xs font-semibold text-gray-500 uppercase">Problemática</span>
-                                        <p className="text-sm text-gray-300 leading-relaxed line-clamp-3 hover:line-clamp-none transition-all duration-200 cursor-help break-words">
+                                        <p className="text-sm text-gray-300 leading-relaxed line-clamp-3 hover:line-clamp-none transition-all duration-200 break-words">
                                             {p.description}
                                         </p>
                                      </div>
@@ -667,7 +703,7 @@ const ProyectPage = () => {
                                      {p.summary && (
                                         <div className="bg-gray-900/40 p-2 rounded border border-gray-700/50">
                                             <span className="text-xs font-semibold text-gray-500 uppercase block mb-1">Resumen</span>
-                                            <p className="text-xs text-gray-400 italic line-clamp-2 hover:line-clamp-none transition-all duration-200 cursor-help break-words">
+                                            <p className="text-xs text-gray-400 italic line-clamp-2 hover:line-clamp-none transition-all duration-200  break-words">
                                                  {p.summary}
                                             </p>
                                         </div>
@@ -729,8 +765,16 @@ const ProyectPage = () => {
                                                      <Label className="text-gray-300">Resumen</Label>
                                                      <Textarea className="bg-gray-900 border-gray-600 mt-1" value={summary} onChange={(e) => setSummary(e.target.value)}/>
                                                   </div>
+                                                    <div>
+                                                      <Label className="text-gray-300">Fecha Inicio</Label>
+                                                      <Input type="date" className="bg-gray-900 border-gray-600 mt-1" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                                                    </div>
+                                                    <div>
+                                                      <Label className="text-gray-300">Fecha Fin</Label>
+                                                      <Input type="date" className="bg-gray-900 border-gray-600 mt-1" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                                                    </div>
                                                   <div className="md:col-span-2 bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                                                     <Label className="text-cyan-400 font-bold mb-3 block flex items-center gap-2"><Code2 className="w-4 h-4"/> Habilidades</Label>
+                                                     <Label className="text-cyan-400 font-bold mb-3 block items-center gap-2"><Code2 className="w-4 h-4"/> Habilidades</Label>
                                                      
                                                      <div className="relative mb-3">
                                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -782,6 +826,14 @@ const ProyectPage = () => {
                                                          setObjectives(text.split("\n").map(l => l.trim()).filter(l => l.length > 0));
                                                       }}/>
                                                   </div>
+                                                  <div className="md:col-span-2">
+                                                    <Label className="text-gray-300">Estado del proyecto </Label>
+                                                      <select className="w-full mt-1 p-2 rounded-md bg-gray-900 border border-gray-600 text-sm text-white" value={status} onChange={(e) => setStatus(e.target.value)}>
+                                                          <option>Selecciona un estado...</option>
+                                                          <option>in-progress</option>
+                                                          <option>completed</option>
+                                                      </select>
+                                                  </div>
                                                </div>
                                                <DialogFooter><Button className="bg-green-600 hover:bg-green-700" onClick={() => handleEditProyect(p.id)}>Guardar Cambios</Button></DialogFooter>
                                             </DialogContent>
@@ -820,5 +872,4 @@ const ProyectPage = () => {
     </div>
   )
 }
-
 export default ProyectPage

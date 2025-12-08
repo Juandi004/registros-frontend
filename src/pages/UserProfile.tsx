@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import avatarPlaceholder from "../assets/avatar.png"
-import { Loader2, Mail, GraduationCap, Shield, User } from "lucide-react"
+import { Loader2, Mail, GraduationCap, Shield } from "lucide-react"
 
 type UserData = {
   name: string
