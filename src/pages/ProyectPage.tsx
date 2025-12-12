@@ -106,8 +106,9 @@ const ProyectPage = () => {
   const [skillDescription, setSkillDescription] = useState('')
   const [skillLevel, setSkillLevel] = useState("") 
   const [skillCategory, setSkillCategory] = useState("")
-/*   const [skillDetails, setSkillDetails] = useState<string[]>([])
-  const [skillDetailsText, setSkillDetailsText] = useState<string>(""); */
+
+  const [viewProject, setViewProject] = useState<Project | null>(null)
+  const [isViewOpen, setIsViewOpen] = useState(false)
 
   const fetchProjects = async () => {
     setLoadingProjects(true)
@@ -122,21 +123,21 @@ const ProyectPage = () => {
     setLoadingProjects(false)
   }
 
-    const fetchUserProjects = async () => {
-      if (!userId) return;
-      try {
-        setLoading(true);
-        const response = await axios.get(`http://localhost:8000/api/users-projects/user/${userId}`, {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        });
-        const projectsOnly = response.data.map((item: any) => item.project);
-        setUserProjects(projectsOnly);
-      } catch (error) {
-        setUserProjects([]);
-      } finally {
-        setLoading(false);
-      }
+  const fetchUserProjects = async () => {
+    if (!userId) return;
+    try {
+      setLoading(true);
+      const response = await axios.get(`http://localhost:8000/api/users-projects/user/${userId}`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      const projectsOnly = response.data.map((item: any) => item.project);
+      setUserProjects(projectsOnly);
+    } catch (error) {
+      setUserProjects([]);
+    } finally {
+      setLoading(false);
     }
+  }
 
   const handleCreateSkill = async () => {
     setLoading(true)
@@ -270,7 +271,8 @@ const ProyectPage = () => {
     setSelectedSkills(existingSkillIds);
   };
 
-  const handleDeleteProyect = async (id: string) => {
+  const handleDeleteProyect = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation()
     try {
       setLoading(true)
       await axios.delete(`http://localhost:8000/api/projects/${id}`)
@@ -532,71 +534,6 @@ const ProyectPage = () => {
           </div>
         ) : (
           <div className="space-y-10">
-            <div>
-{/*               {userProjects.length > 0 ? (
-                <>
-                  <div className="flex items-center gap-2 mb-4">
-                      <div className="h-8 w-1 bg-cyan-500 rounded-full"></div>
-                      <h2 className="text-xl font-bold text-white">Proyectos registrados por el usuario</h2>
-                  </div>
-                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                    {userProjects.map((p) => {
-                      const careerName = careers.find((c) => c.id === p.careerId)?.name
-                      const mySkills = getProjectSkillsDisplay(p.id)
-
-                      return (
-                        <div key={p.id} className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 group">
-                          <div className="p-6 border-b border-gray-700 bg-gray-800/50 relative">
-                            <div className="absolute top-4 right-4 opacity-50 group-hover:opacity-100 transition-opacity">
-                                <span className="text-xs font-mono text-cyan-500 bg-cyan-950/30 px-2 py-1 rounded">{p.status || 'En Proceso'}</span>
-                            </div>
-                            
-                            <h3 className="text-2xl font-bold text-white mb-2 pr-10">{p.name}</h3>
-                            <div className="flex flex-wrap gap-4 text-sm text-gray-400 mt-3">
-                               <div className="flex items-center gap-1"><GraduationCap className="w-4 h-4 text-cyan-500"/> {careerName || "Sin carrera"}</div>
-                               <div className="flex items-center gap-1"><BookOpen className="w-4 h-4 text-cyan-500"/> {p.cycle}</div>
-                            </div>
-                          </div>
-
-                          <div className="p-6 space-y-4">
-                             <div>
-                                <h4 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-1 flex items-center gap-2"><FileText className="w-4 h-4"/> Problemática</h4>
-                                <div className="space-y-3 w-[300px] whitespace-normal">
-                                    <p className="text-gray-400 text-sm leading-relaxed line-clamp-3 hover:line-clamp-none transition-all duration-200 cursor-help break-words">{p.description}</p>
-                                </div>
-                             </div>
-                             
-                             {mySkills.length > 0 && (
-                                <div>
-                                   <h4 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-2 flex items-center gap-2"><Code2 className="w-4 h-4"/> Tecnologías</h4>
-                                   <div className="flex flex-wrap gap-2">
-                                      {mySkills.map(sk => (
-                                         <Badge key={sk.id} variant="outline" className="border-gray-600 text-gray-300 bg-gray-700/50">
-                                            {sk.name}
-                                         </Badge>
-                                      ))}
-                                   </div>
-                                </div>
-                             )}
-
-                             <div className="pt-4 border-t border-gray-700 flex justify-between items-center text-sm">
-                                <div className="text-gray-400 flex items-center gap-2">
-                                   <CalendarIcon className="w-3 h-3 text-gray-500"/> 
-                                   {formatDate(p.startDate)} - {formatDate(p.endDate)}
-                                </div>
-                             </div>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </>
-              ) : (
-                <div className="bg-gray-800/50 border border-gray-700 border-dashed rounded-xl p-8 text-center">
-                  <p className="text-gray-400 text-lg italic">El usuario no tiene proyectos registrados.</p>
-                </div>
-              )} */}
-            </div>
             <div className="bg-gray-800 rounded-xl border border-gray-700 shadow-xl overflow-hidden">
                <div className="p-4 border-b border-gray-700 bg-gray-900/30 flex justify-between items-center">
                   <h2 className="text-lg font-bold text-white">Directorio Completo de Proyectos</h2>
@@ -619,7 +556,7 @@ const ProyectPage = () => {
                           </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <Label>Nivel (Level)</Label>
+                                    <Label>Nivel</Label>
                                     <Input 
                                         value={skillLevel}
                                         onChange={(e) => setSkillLevel(e.target.value)}
@@ -628,7 +565,7 @@ const ProyectPage = () => {
                                     />
                                 </div>
                                 <div>
-                                    <Label>Categoría (Category)</Label>
+                                    <Label>Categoría</Label>
                                     <Input 
                                         value={skillCategory}
                                         onChange={(e) => setSkillCategory(e.target.value)}
@@ -662,25 +599,29 @@ const ProyectPage = () => {
                          <TableCell colSpan={5} className="text-center h-32 text-gray-500">No se encontraron proyectos.</TableCell>
                        </TableRow>
                      ) : (
-                      projects.filter(p => {
-                        const term = search.toLowerCase();
-                        const projectSkillsList = getProjectSkillsDisplay(p.id);
-                        const hasSkill = projectSkillsList.some(s => s.name.toLowerCase().includes(term));
-                        const matchesSearch = (
-                          (p.name && p.name.toLowerCase().includes(term)) ||
-                          (p.description && p.description.toLowerCase().includes(term)) ||
-                          hasSkill
-                        );
-                        const matchesStatus = filterStatus === "TODOS" || p.status === filterStatus;
-                        return matchesSearch && matchesStatus;
-                      }).map((p) => {
+                       projects.filter(p => {
+                         const term = search.toLowerCase();
+                         const projectSkillsList = getProjectSkillsDisplay(p.id);
+                         const hasSkill = projectSkillsList.some(s => s.name.toLowerCase().includes(term));
+                         const matchesSearch = (
+                           (p.name && p.name.toLowerCase().includes(term)) ||
+                           (p.description && p.description.toLowerCase().includes(term)) ||
+                           hasSkill
+                         );
+                         const matchesStatus = filterStatus === "TODOS" || p.status === filterStatus;
+                         return matchesSearch && matchesStatus;
+                       }).map((p) => {
                           const careerName = careers.find((c) => c.id === p.careerId)?.name;
                           const isAdmin = roleName === "ADMIN";
                           const isOwner = userProjects.some((up) => up.id === p.id);
                           const mySkills = getProjectSkillsDisplay(p.id);
 
                           return (
-                            <TableRow key={p.id} className="border-gray-700 hover:bg-gray-700/30 transition-colors group align-top">
+                            <TableRow 
+                              key={p.id} 
+                              className="border-gray-700 hover:bg-gray-700/30 transition-colors group align-top cursor-pointer"
+                              onClick={() => { setViewProject(p); setIsViewOpen(true); }}
+                            >
                                <TableCell className="py-4 align-top">
                                   <div className="space-y-2">
                                      <p className="text-white font-bold text-lg leading-tight">{p.name}</p>
@@ -695,7 +636,7 @@ const ProyectPage = () => {
                                   <div className="space-y-3 w-[300px] whitespace-normal">
                                      <div>
                                         <span className="text-xs font-semibold text-gray-500 uppercase">Problemática</span>
-                                        <p className="text-sm text-gray-300 leading-relaxed line-clamp-3 hover:line-clamp-none transition-all duration-200 break-words">
+                                        <p className="text-sm text-gray-300 leading-relaxed break-words line-clamp-3">
                                             {p.description}
                                         </p>
                                      </div>
@@ -703,7 +644,7 @@ const ProyectPage = () => {
                                      {p.summary && (
                                         <div className="bg-gray-900/40 p-2 rounded border border-gray-700/50">
                                             <span className="text-xs font-semibold text-gray-500 uppercase block mb-1">Resumen</span>
-                                            <p className="text-xs text-gray-400 italic line-clamp-2 hover:line-clamp-none transition-all duration-200  break-words">
+                                            <p className="text-xs text-gray-400 italic break-words line-clamp-2">
                                                  {p.summary}
                                             </p>
                                         </div>
@@ -724,9 +665,10 @@ const ProyectPage = () => {
                                <TableCell className="py-4 align-top">
                                   {p.objectives && p.objectives.length > 0 ? (
                                     <ul className="list-disc pl-4 space-y-1">
-                                         {p.objectives.map((obj, i) => (
-                                            <li key={i} className="text-sm text-gray-400 leading-snug">{obj}</li>
-                                         ))}
+                                             {p.objectives.slice(0, 3).map((obj, i) => (
+                                                <li key={i} className="text-sm text-gray-400 leading-snug line-clamp-2">- {obj}</li>
+                                             ))}
+                                             {p.objectives.length > 3 && <li className="text-xs text-cyan-500 italic">... y {p.objectives.length - 3} más</li>}
                                     </ul>
                                   ) : (
                                     <span className="text-xs text-gray-600 italic">Sin objetivos registrados</span>
@@ -744,7 +686,7 @@ const ProyectPage = () => {
                                   </div>
                                </TableCell>
                                <TableCell className="py-4 align-top text-right">
-                                  <div className="flex justify-end gap-1">
+                                  <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                                      {(isAdmin || isOwner) && (
                                         <Dialog onOpenChange={(open) => { if(open) loadProjectData(p); else resetForm(); }}>
                                             <DialogTrigger asChild>
@@ -779,11 +721,11 @@ const ProyectPage = () => {
                                                      <div className="relative mb-3">
                                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                                                        <Input
-                                                         value={skillSearch}
-                                                         onChange={(e) => setSkillSearch(e.target.value)}
-                                                         type="text"
-                                                         placeholder="Buscar habilidad..."
-                                                         className="pl-9 bg-gray-800 border-gray-600 text-white focus:ring-cyan-500 focus:border-cyan-500 text-sm h-9"
+                                                          value={skillSearch}
+                                                          onChange={(e) => setSkillSearch(e.target.value)}
+                                                          type="text"
+                                                          placeholder="Buscar habilidad..."
+                                                          className="pl-9 bg-gray-800 border-gray-600 text-white focus:ring-cyan-500 focus:border-cyan-500 text-sm h-9"
                                                        />
                                                      </div>
 
@@ -821,9 +763,9 @@ const ProyectPage = () => {
                                                   <div className="md:col-span-2">
                                                      <Label className="text-gray-300">Objetivos</Label>
                                                      <Textarea className="bg-gray-900 border-gray-600 mt-1 h-32" value={objectivesText} onChange={(e) => {
-                                                         const text = e.target.value;
-                                                         setObjectivesText(text);
-                                                         setObjectives(text.split("\n").map(l => l.trim()).filter(l => l.length > 0));
+                                                          const text = e.target.value;
+                                                          setObjectivesText(text);
+                                                          setObjectives(text.split("\n").map(l => l.trim()).filter(l => l.length > 0));
                                                       }}/>
                                                   </div>
                                                   <div className="md:col-span-2">
@@ -837,7 +779,7 @@ const ProyectPage = () => {
                                                </div>
                                                <DialogFooter><Button className="bg-green-600 hover:bg-green-700" onClick={() => handleEditProyect(p.id)}>Guardar Cambios</Button></DialogFooter>
                                             </DialogContent>
-                                         </Dialog>
+                                       </Dialog>
                                      )}
                                      {isAdmin && (
                                         <Dialog>
@@ -848,10 +790,10 @@ const ProyectPage = () => {
                                                <DialogHeader><DialogTitle>¿Eliminar Proyecto?</DialogTitle></DialogHeader>
                                                <DialogDescription className="text-gray-400">Esta acción no se puede deshacer.</DialogDescription>
                                                <DialogFooter>
-                                                  <Button className="bg-red-600 hover:bg-red-700" onClick={() => handleDeleteProyect(p.id)}>Confirmar Eliminación</Button>
+                                                  <Button className="bg-red-600 hover:bg-red-700" onClick={(e) => handleDeleteProyect(e, p.id)}>Confirmar Eliminación</Button>
                                                </DialogFooter>
                                             </DialogContent>
-                                         </Dialog>
+                                        </Dialog>
                                      )}
                                   </div>
                                </TableCell>
@@ -869,6 +811,86 @@ const ProyectPage = () => {
           </div>
         )}
       </main>
+<Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+  <DialogContent className="min-w-2xl w-full max-w-4xl bg-slate-900 border-slate-700 text-slate-100 p-0">
+    <div className="max-h-[80vh] overflow-y-auto p-6 space-y-6 break-words break-all">
+
+      <DialogHeader>
+        <DialogTitle className="text-2xl font-bold text-cyan-400 flex items-center gap-2">
+          <FileText className="w-6 h-6" /> {viewProject?.name}
+        </DialogTitle>
+        <DialogDescription className="text-slate-400">
+          Detalles completos del proyecto
+        </DialogDescription>
+      </DialogHeader>
+      {viewProject && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-800/50 p-4 rounded-lg">
+            <div>
+              <h4 className="text-xs font-bold text-cyan-500 uppercase mb-1">Carrera</h4>
+              <p className="text-sm">{careers.find(c => c.id === viewProject.careerId)?.name || "N/A"}</p>
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-cyan-500 uppercase mb-1">Periodo & Ciclo</h4>
+              <p className="text-sm">{viewProject.academic_period} - {viewProject.cycle}</p>
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-cyan-500 uppercase mb-1">Fechas</h4>
+              <p className="text-sm text-slate-300">
+                {formatDate(viewProject.startDate)} al {formatDate(viewProject.endDate)}
+              </p>
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-cyan-500 uppercase mb-1">Estado</h4>
+              <Badge variant="outline" className="text-cyan-300 border-cyan-700">{viewProject.status}</Badge>
+            </div>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-2 border-b border-slate-700 pb-1">Problemática</h3>
+            <div className="text-slate-300 leading-relaxed whitespace-pre-wrap break-words bg-slate-950/30 p-3 rounded-md border border-slate-800 overflow-hidden">
+              {viewProject.description}
+            </div>
+          </div>
+          {viewProject.summary && (
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-2 border-b border-slate-700 pb-1">Resumen Ejecutivo</h3>
+              <div className="text-slate-300 leading-relaxed whitespace-pre-wrap break-words bg-slate-950/30 p-3 rounded-md border border-slate-800 overflow-hidden">
+                {viewProject.summary}
+              </div>
+            </div>
+          )}
+          {viewProject.objectives?.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-2 border-b border-slate-700 pb-1">Objetivos</h3>
+              <ul className="list-disc pl-5 space-y-2 text-slate-300 break-words">
+                {viewProject.objectives.map((obj, i) => (
+                  <li key={i}>{obj}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-2 border-b border-slate-700 pb-1">Tecnologías / Skills</h3>
+            <div className="flex flex-wrap gap-2">
+              {getProjectSkillsDisplay(viewProject.id).map(skill => (
+                <Badge key={skill.id} className="bg-slate-700 hover:bg-slate-600 text-white">
+                  {skill.name}
+                </Badge>
+              ))}
+            </div>
+          </div>
+
+        </div>
+      )}
+      <DialogFooter>
+        <Button onClick={() => setIsViewOpen(false)} className="bg-cyan-600 hover:bg-cyan-700 text-white">
+          Cerrar
+        </Button>
+      </DialogFooter>
+    </div>
+  </DialogContent>
+</Dialog>
+
     </div>
   )
 }

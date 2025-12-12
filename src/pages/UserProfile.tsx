@@ -129,7 +129,6 @@ const UserProfile = () => {
                 {roleName}
               </span>
             </CardHeader>
-
             <CardContent className="space-y-2">
               <div className="flex items-center gap-4 p-3 rounded-lg bg-gray-800/50">
                 <div className="bg-gray-700 p-2 rounded-full text-gray-300">
