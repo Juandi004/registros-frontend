@@ -107,14 +107,6 @@ const Dashboard = () => {
       desc: "Proyectos PIENSA activos"
     },
     { 
-      label: "Usuarios / Profesores", 
-      value: stats.totalUsers, 
-      icon: Users, 
-      color: "text-purple-500", 
-      bg: "bg-purple-500/10",
-      desc: "Usuarios en plataforma"
-    },
-    { 
       label: "Carreras Ofertadas", 
       value: stats.totalCareers, 
       icon: GraduationCap, 
@@ -154,7 +146,7 @@ const Dashboard = () => {
           </div>
         ) : (
           <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {statCards.map((stat, index) => (
                 <Card key={index} className="bg-gray-900 border-gray-800 shadow-lg hover:border-gray-700 transition-all">
                   <CardContent className="p-6">

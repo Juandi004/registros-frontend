@@ -5,6 +5,11 @@ import { useNavigate } from "react-router-dom"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import avatarPlaceholder from "../assets/avatar.png"
 import { Loader2, Mail, GraduationCap, Shield } from "lucide-react"
+import { DialogTrigger, Dialog, DialogTitle, DialogContent, DialogHeader, DialogFooter, DialogClose } from "@/components/ui/dialog"
+import { Pencil } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
 
 type UserData = {
   name: string
@@ -26,13 +31,25 @@ const UserProfile = () => {
   const [user, setUser] = useState<UserData | null>(null)
   const [careerName, setCareerName] = useState("Cargando...")
   const [roleName, setRoleName] = useState("Cargando...")
+  const [name, setName]=useState('')
 
-  useEffect(() => {
-    if (!accessToken || !userId) {
-      navigate("/login")
-      return
+  const handleEditUser = async()=> {
+    try {
+      setLoading(true)
+      const req = await axios.patch(`http://localhost:8000/api/users/${userId}`, 
+        {name}
+      )
+      console.log('Usuario Editado', req.data)
+    } catch (error) {
+      console.log('Error al editar el usuario, intente nuevamente', error)
     }
-    const loadProfile = async () => {
+    finally{
+      setLoading(false)
+    }
+    await loadProfile()
+  }
+
+      const loadProfile = async () => {
       setLoading(true)
       try {
         const headers = { Authorization: `Bearer ${accessToken}` }
@@ -55,6 +72,13 @@ const UserProfile = () => {
         setLoading(false)
       }
     }
+
+  useEffect(() => {
+    if (!accessToken || !userId) {
+      navigate("/login")
+      return
+    }
+
     loadProfile()
   }, [userId, accessToken, navigate])
 
@@ -78,13 +102,35 @@ const UserProfile = () => {
                   className="w-full h-full object-cover" 
                 />
               </div>
+              <div className="flex flex-row justify-around">
               <h2 className="text-2xl font-bold text-white">{user?.name}</h2>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button className="">
+                        <Pencil className="w-4 h-4"/>
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-gray-800 border-gray-700 text-white">
+                      <DialogHeader><DialogTitle>Editar Nombre de usuario</DialogTitle></DialogHeader>
+                      <div className="space-y-3 py-4">
+                          <div>
+                              <Label>Nombre</Label>
+                              <Input onChange={(e)=>setName(e.target.value)} placeholder="Juan Pérez" className="bg-gray-900 border-gray-600 mt-1" value={name}/>
+                          </div>
+                      </div>
+                      <DialogFooter>
+                        <DialogClose asChild><Button variant="ghost" className="hover:bg-gray-700">Cancelar</Button></DialogClose>
+                        <Button className="bg-green-600 hover:bg-green-700" onClick={handleEditUser}>Editar</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+              </div>
               <span className="text-cyan-500 font-medium text-sm bg-cyan-950/50 px-3 py-1 rounded-full border border-cyan-900">
                 {roleName}
               </span>
             </CardHeader>
 
-            <CardContent className="space-y-4 pt-6">
+            <CardContent className="space-y-2">
               <div className="flex items-center gap-4 p-3 rounded-lg bg-gray-800/50">
                 <div className="bg-gray-700 p-2 rounded-full text-gray-300">
                   <Mail className="w-5 h-5" />
