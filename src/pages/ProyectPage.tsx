@@ -811,85 +811,84 @@ const ProyectPage = () => {
           </div>
         )}
       </main>
-<Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-  <DialogContent className="min-w-2xl w-full max-w-4xl bg-slate-900 border-slate-700 text-slate-100 p-0">
-    <div className="max-h-[80vh] overflow-y-auto p-6 space-y-6 break-words break-all">
+        <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+          <DialogContent className="min-w-2xl w-full max-w-4xl bg-slate-900 border-slate-700 text-slate-100 p-0">
+            <div className="max-h-[80vh] overflow-y-auto p-6 space-y-6 break-words break-all">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold text-cyan-400 flex items-center gap-2">
+                  <FileText className="w-6 h-6" /> {viewProject?.name}
+                </DialogTitle>
+                <DialogDescription className="text-slate-400">
+                  Detalles completos del proyecto
+                </DialogDescription>
+              </DialogHeader>
+              {viewProject && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-800/50 p-4 rounded-lg">
+                    <div>
+                      <h4 className="text-xs font-bold text-cyan-500 uppercase mb-1">Carrera</h4>
+                      <p className="text-sm">{careers.find(c => c.id === viewProject.careerId)?.name || "N/A"}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-cyan-500 uppercase mb-1">Periodo & Ciclo</h4>
+                      <p className="text-sm">{viewProject.academic_period} - {viewProject.cycle}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-cyan-500 uppercase mb-1">Fechas</h4>
+                      <p className="text-sm text-slate-300">
+                        {formatDate(viewProject.startDate)} al {formatDate(viewProject.endDate)}
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-cyan-500 uppercase mb-1">Estado</h4>
+                      <Badge variant="outline" className="text-cyan-300 border-cyan-700">{viewProject.status}</Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-2 border-b border-slate-700 pb-1">Problemática</h3>
+                    <div className="text-slate-300 leading-relaxed whitespace-pre-wrap break-words bg-slate-950/30 p-3 rounded-md border border-slate-800 overflow-hidden">
+                      {viewProject.description}
+                    </div>
+                  </div>
+                  {viewProject.summary && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-white mb-2 border-b border-slate-700 pb-1">Resumen Ejecutivo</h3>
+                      <div className="text-slate-300 leading-relaxed whitespace-pre-wrap break-words bg-slate-950/30 p-3 rounded-md border border-slate-800 overflow-hidden">
+                        {viewProject.summary}
+                      </div>
+                    </div>
+                  )}
+                  {viewProject.objectives?.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-white mb-2 border-b border-slate-700 pb-1">Objetivos</h3>
+                      <ul className="list-disc pl-5 space-y-2 text-slate-300 break-words">
+                        {viewProject.objectives.map((obj, i) => (
+                          <li key={i}>{obj}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-2 border-b border-slate-700 pb-1">Tecnologías / Skills</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {getProjectSkillsDisplay(viewProject.id).map(skill => (
+                        <Badge key={skill.id} className="bg-slate-700 hover:bg-slate-600 text-white">
+                          {skill.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
 
-      <DialogHeader>
-        <DialogTitle className="text-2xl font-bold text-cyan-400 flex items-center gap-2">
-          <FileText className="w-6 h-6" /> {viewProject?.name}
-        </DialogTitle>
-        <DialogDescription className="text-slate-400">
-          Detalles completos del proyecto
-        </DialogDescription>
-      </DialogHeader>
-      {viewProject && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-800/50 p-4 rounded-lg">
-            <div>
-              <h4 className="text-xs font-bold text-cyan-500 uppercase mb-1">Carrera</h4>
-              <p className="text-sm">{careers.find(c => c.id === viewProject.careerId)?.name || "N/A"}</p>
+                </div>
+              )}
+              <DialogFooter>
+                <Button onClick={() => setIsViewOpen(false)} className="bg-cyan-600 hover:bg-cyan-700 text-white">
+                  Cerrar
+                </Button>
+              </DialogFooter>
             </div>
-            <div>
-              <h4 className="text-xs font-bold text-cyan-500 uppercase mb-1">Periodo & Ciclo</h4>
-              <p className="text-sm">{viewProject.academic_period} - {viewProject.cycle}</p>
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-cyan-500 uppercase mb-1">Fechas</h4>
-              <p className="text-sm text-slate-300">
-                {formatDate(viewProject.startDate)} al {formatDate(viewProject.endDate)}
-              </p>
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-cyan-500 uppercase mb-1">Estado</h4>
-              <Badge variant="outline" className="text-cyan-300 border-cyan-700">{viewProject.status}</Badge>
-            </div>
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-white mb-2 border-b border-slate-700 pb-1">Problemática</h3>
-            <div className="text-slate-300 leading-relaxed whitespace-pre-wrap break-words bg-slate-950/30 p-3 rounded-md border border-slate-800 overflow-hidden">
-              {viewProject.description}
-            </div>
-          </div>
-          {viewProject.summary && (
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-2 border-b border-slate-700 pb-1">Resumen Ejecutivo</h3>
-              <div className="text-slate-300 leading-relaxed whitespace-pre-wrap break-words bg-slate-950/30 p-3 rounded-md border border-slate-800 overflow-hidden">
-                {viewProject.summary}
-              </div>
-            </div>
-          )}
-          {viewProject.objectives?.length > 0 && (
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-2 border-b border-slate-700 pb-1">Objetivos</h3>
-              <ul className="list-disc pl-5 space-y-2 text-slate-300 break-words">
-                {viewProject.objectives.map((obj, i) => (
-                  <li key={i}>{obj}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-          <div>
-            <h3 className="text-lg font-semibold text-white mb-2 border-b border-slate-700 pb-1">Tecnologías / Skills</h3>
-            <div className="flex flex-wrap gap-2">
-              {getProjectSkillsDisplay(viewProject.id).map(skill => (
-                <Badge key={skill.id} className="bg-slate-700 hover:bg-slate-600 text-white">
-                  {skill.name}
-                </Badge>
-              ))}
-            </div>
-          </div>
-
-        </div>
-      )}
-      <DialogFooter>
-        <Button onClick={() => setIsViewOpen(false)} className="bg-cyan-600 hover:bg-cyan-700 text-white">
-          Cerrar
-        </Button>
-      </DialogFooter>
-    </div>
-  </DialogContent>
-</Dialog>
+          </DialogContent>
+        </Dialog>
 
     </div>
   )
