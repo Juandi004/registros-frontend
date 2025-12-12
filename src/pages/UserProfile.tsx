@@ -103,11 +103,14 @@ const UserProfile = () => {
                 />
               </div>
               <div className="flex flex-row justify-around">
-              <h2 className="text-2xl font-bold text-white">{user?.name}</h2>
+              <div>
+              <h2 className="text-2xl font-bold text-white px-3 justify-self-center">{user?.name}</h2>
+              </div>
+              <div>
                   <Dialog>
                     <DialogTrigger asChild>
-                      <Button className="">
-                        <Pencil className="w-4 h-4"/>
+                      <Button className="hover:bg-gray-700">
+                        <Pencil className="h-4"/>
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="bg-gray-800 border-gray-700 text-white">
@@ -124,6 +127,7 @@ const UserProfile = () => {
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
+                </div>
               </div>
               <span className="text-cyan-500 font-medium text-sm bg-cyan-950/50 px-3 py-1 rounded-full border border-cyan-900">
                 {roleName}
