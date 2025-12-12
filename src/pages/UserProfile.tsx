@@ -102,7 +102,7 @@ const UserProfile = () => {
                   className="w-full h-full object-cover" 
                 />
               </div>
-              <div className="flex flex-row justify-around">
+              <div className="flex flex-row justify-around">  
               <div>
               <h2 className="text-2xl font-bold text-white px-3 justify-self-center">{user?.name}</h2>
               </div>
