@@ -600,12 +600,14 @@ const ProyectPage = () => {
                        </TableRow>
                      ) : (
                        projects.filter(p => {
+                         const careerName = careers.find((c) => c.id === p.careerId)?.name
                          const term = search.toLowerCase();
                          const projectSkillsList = getProjectSkillsDisplay(p.id);
                          const hasSkill = projectSkillsList.some(s => s.name.toLowerCase().includes(term));
                          const matchesSearch = (
                            (p.name && p.name.toLowerCase().includes(term)) ||
                            (p.description && p.description.toLowerCase().includes(term)) ||
+                           (careerName && careerName.toLowerCase().includes(term))||
                            hasSkill
                          );
                          const matchesStatus = filterStatus === "TODOS" || p.status === filterStatus;
