@@ -32,16 +32,6 @@ type Project = {
   createdAt: string
 }
 
-type User = {
-  id: string
-  name: string
-}
-
-type Skill = {
-  id: string
-  name: string
-}
-
 const Dashboard = () => {
   const navigate = useNavigate()
   const accessToken = localStorage.getItem("token")

@@ -12,13 +12,12 @@ import { useEffect, useState } from "react"
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTrigger, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import axios from "axios"
-import { Loader2, CalendarIcon, GraduationCap, BookOpen, FileText, Code2, CheckCircle2Icon, Pencil, Trash, Plus } from "lucide-react"
+import { Loader2, CalendarIcon, GraduationCap, BookOpen, FileText, Code2, CheckCircle2Icon, Pencil, Trash, Plus, User, User2} from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircleIcon, Search } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { json } from "stream/consumers"
 
 type Project = {
   id: string
@@ -30,11 +29,18 @@ type Project = {
   summary: string
   cycle: string
   academic_period: string
+  createdBy: string
+  user: {
+    id: string
+    name: string
+    email: string
+  }
   startDate?: string | null
   endDate?: string | null
   careerId: string
   createdAt?: string
   updatedAt?: string
+  deliverables: string []
 }
 
 type Career = {
@@ -45,7 +51,9 @@ type Career = {
 type User = {
   id: string
   careerId: string,
-  roleId: string
+  roleId: string,
+  email: string,
+  name: string
 }
 
 type Skill = {
@@ -78,11 +86,13 @@ const ProyectPage = () => {
   const [endDate, setEndDate] = useState("")
   const [summary, setSummary] = useState('')
   const [cycle, setCycle] = useState('')
-  const [objectives, setObjectives] = useState<string[]>([]);
-  const [objectivesText, setObjectivesText] = useState<string>("");
+  const [objectives, setObjectives] = useState<string[]>([])
+  const [objectivesText, setObjectivesText] = useState<string>("")
   const [academicPeriod, setAcademicPeriod] = useState('')
   const [careerId, setCareerId] = useState('')
-  const [status, setStatus]=useState('in-progress')
+  const [status, setStatus]=useState('en progreso')
+  const [deliverables, setDeliverables]=useState<string[]>([])
+  const [deliverablesText ,setDeliverablesText]=useState('')
 
   const accessToken = localStorage.getItem("token")
   const [loadingProjects, setLoadingProjects] = useState(false)
@@ -96,7 +106,7 @@ const ProyectPage = () => {
   const [search, setSearch] = useState("")
   const [skillSearch, setSkillSearch]=useState("")
   const [filterStatus, setFilterStatus] = useState("TODOS");
-  const statusOptions = ["TODOS", "in-progress", "completed"];
+  const statusOptions = ["TODOS", "en progreso", "completado"];
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [deleteSuccess, setDeleteSuccess] = useState(false)
   const [errorDelete, setErrorDelete] = useState(false)
@@ -143,8 +153,8 @@ const ProyectPage = () => {
     try {
       await axios.post('http://localhost:8000/api/skills', {
         name: skillName,
-        description: skillDescription,
-        })
+        description: skillDescription
+      })
       
       fetchSkillsData(); 
       setSuccess(true);
@@ -240,7 +250,7 @@ const ProyectPage = () => {
     setProjectName(""); setDescription(""); setSummary(""); setCycle("");
     setAcademicPeriod(""); setStartDate(""); setEndDate(""); setCareerId("");
     setObjectives([]); setObjectivesText(""); setSelectedSkills([]);
-    setSkillSearch("");
+    setSkillSearch(""); setDeliverables([]); setDeliverablesText("");
   }
 
   const loadProjectData = (project: Project) => {
@@ -253,6 +263,8 @@ const ProyectPage = () => {
     setEndDate(project.endDate ? project.endDate.split('T')[0] : "")
     setObjectives(project.objectives || []);
     setObjectivesText(project.objectives?.join("\n") || "");
+    setDeliverables(project.deliverables || [])
+    setDeliverablesText(project.deliverables?.join("\n") || "");
     setAcademicPeriod(project.academic_period)
     setCycle(project.cycle)
     setSummary(project.summary)
@@ -295,6 +307,7 @@ const ProyectPage = () => {
         status,
         startDate: startDate ? new Date(startDate).toISOString() : null,
         endDate: endDate ? new Date(endDate).toISOString() : null,
+        deliverables
       });
 
       const currentRelations = projectSkills.filter(ps => ps.projectId === id);
@@ -332,6 +345,8 @@ const ProyectPage = () => {
         objectives,
         startDate: startDate ? new Date(startDate).toISOString() : null,
         endDate: endDate ? new Date(endDate).toISOString() : null,
+        createdBy: userId,
+        deliverables
       });
 
       const projectId = res.data.id;
@@ -356,7 +371,7 @@ const ProyectPage = () => {
   };
 
   const roleName = user ? role.find(r => r.id === user.roleId)?.name : "";
-
+  
   const formatDate = (dateString?: string | null) => {
     if (!dateString) return "Pendiente";
     return new Date(dateString).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -503,11 +518,24 @@ const ProyectPage = () => {
                     />
                   </div>
                   <div className="md:col-span-2">
+                    <Label className="text-gray-300">Entregables (uno por línea)</Label>
+                    <Textarea className="bg-gray-900 border-gray-600 mt-1 h-32" 
+                      value={deliverablesText}
+                      placeholder="- Entregable 1&#10;- Entregable 2"
+                      onChange={(e) => {
+                        const text = e.target.value;
+                        setDeliverablesText(text);
+                        const lines = text.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+                        setDeliverables(lines);
+                      }}
+                    />
+                  </div>
+                  <div className="md:col-span-2">
                     <Label className="text-gray-300">Estado del proyecto </Label>
                       <select className="w-full mt-1 p-2 rounded-md bg-gray-900 border border-gray-600 text-sm text-white" value={status} onChange={(e) => setStatus(e.target.value)}>
                           <option>Selecciona un estado...</option>
-                          <option>in-progress</option>
-                          <option>completed</option>
+                          <option>en progreso</option>
+                          <option>completado</option>
                       </select>
                   </div>
                 </div>
@@ -579,9 +607,9 @@ const ProyectPage = () => {
                  <Table>
                    <TableHeader className="bg-gray-900/50">
                      <TableRow className="border-gray-700 hover:bg-gray-900/50">
-                       <TableHead className="text-gray-300 font-bold min-w-[250px]">Proyecto & Académico</TableHead>
+                       <TableHead className="text-gray-300 font-bold min-w-[250px]">Proyecto</TableHead>
                        <TableHead className="text-gray-300 font-bold">Detalles & Skills</TableHead>
-                       <TableHead className="text-gray-300 font-bold min-w-[200px]">Objetivos</TableHead>
+                       <TableHead className="text-gray-300 font-bold min-w-[150px]">Objetivos</TableHead>
                        <TableHead className="text-gray-300 font-bold min-w-[150px]">Fechas & Estado</TableHead>
                        <TableHead className="text-gray-300 font-bold text-right">Acciones</TableHead>
                      </TableRow>
@@ -624,6 +652,10 @@ const ProyectPage = () => {
                                         <div className="flex items-center gap-2"><GraduationCap className="w-3 h-3"/> {careerName || "Sin Carrera"}</div>
                                         <div className="flex items-center gap-2"><BookOpen className="w-3 h-3"/> {p.cycle}</div>
                                         <div className="flex items-center gap-2"><CalendarIcon className="w-3 h-3"/> {p.academic_period}</div>
+                                        <div className="flex items-center gap-2">
+                                            <User2 className="w-3 h-3"/> 
+                                            {p.user?.name || "Desconocido"}
+                                        </div>
                                      </div>
                                   </div>
                                </TableCell>
@@ -764,11 +796,19 @@ const ProyectPage = () => {
                                                       }}/>
                                                   </div>
                                                   <div className="md:col-span-2">
+                                                     <Label className="text-gray-300">Entregables</Label>
+                                                     <Textarea className="bg-gray-900 border-gray-600 mt-1 h-32" value={deliverablesText} onChange={(e) => {
+                                                          const text = e.target.value;
+                                                          setDeliverablesText(text);
+                                                          setDeliverables(text.split("\n").map(l => l.trim()).filter(l => l.length > 0));
+                                                      }}/>
+                                                  </div>                                                 
+                                                  <div className="md:col-span-2">
                                                     <Label className="text-gray-300">Estado del proyecto </Label>
                                                       <select className="w-full mt-1 p-2 rounded-md bg-gray-900 border border-gray-600 text-sm text-white" value={status} onChange={(e) => setStatus(e.target.value)}>
                                                           <option>Selecciona un estado...</option>
-                                                          <option>in-progress</option>
-                                                          <option>completed</option>
+                                                          <option>en progreso</option>
+                                                          <option>completado</option>
                                                       </select>
                                                   </div>
                                                </div>
@@ -858,6 +898,16 @@ const ProyectPage = () => {
                       <h3 className="text-lg font-semibold text-white mb-2 border-b border-slate-700 pb-1">Objetivos</h3>
                       <ul className="list-disc pl-5 space-y-2 text-slate-300 break-words">
                         {viewProject.objectives.map((obj, i) => (
+                          <li key={i}>{obj}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {viewProject.deliverables?.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-white mb-2 border-b border-slate-700 pb-1">Entregables</h3>
+                      <ul className="list-disc pl-5 space-y-2 text-slate-300 break-words">
+                        {viewProject.deliverables.map((obj, i) => (
                           <li key={i}>{obj}</li>
                         ))}
                       </ul>
