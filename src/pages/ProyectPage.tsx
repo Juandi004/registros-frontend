@@ -450,10 +450,18 @@ const ProyectPage = () => {
                       <option>Cuarto Ciclo</option>
                     </select>
                   </div>
-                  <div>
-                    <Label className="text-gray-300">Periodo Académico</Label>
-                    <Input className="bg-gray-900 border-gray-600 mt-1" placeholder="Ej: Mar 2025 - Ago 2025" value={academicPeriod} onChange={(e) => setAcademicPeriod(e.target.value)} />
-                  </div>
+                    <div>
+                       <Label className="text-gray-300">Periodo Académico</Label>
+                       <select className="w-full mt-1 p-2 rounded-md bg-gray-900 border border-gray-600 text-sm text-white" value={academicPeriod} onChange={e=>setAcademicPeriod(e.target.value)}>
+                        <option>Seleccionar...</option>
+                        <option>Sep 2025 - Feb 2026</option>
+                        <option>Mar 2026 - Ago 2026</option>
+                        <option>Sep 2026 - Feb 2027</option>
+                        <option>Mar 2027 - Ago 2027</option>
+                        <option>Sep 2027 - Feb 2028</option>
+                        <option>Mar 2028 - Ago 2028</option>
+                       </select>
+                    </div>
                   <div>
                     <Label className="text-gray-300">Fecha Inicio</Label>
                     <Input type="date" className="bg-gray-900 border-gray-600 mt-1" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
@@ -784,8 +792,16 @@ const ProyectPage = () => {
                                                      </select>
                                                   </div>
                                                   <div>
-                                                     <Label className="text-gray-300">Periodo</Label>
-                                                     <Input className="bg-gray-900 border-gray-600 mt-1" value={academicPeriod} onChange={(e) => setAcademicPeriod(e.target.value)}/>
+                                                     <Label className="text-gray-300">Periodo Académico</Label>
+                                                     <select className="w-full mt-1 p-2 rounded-md bg-gray-900 border border-gray-600 text-sm text-white" value={academicPeriod} onChange={e=>setAcademicPeriod(e.target.value)}>
+                                                      <option>Seleccionar...</option>
+                                                      <option>Sep 2025 - Feb 2026</option>
+                                                      <option>Mar 2026 - Ago 2026</option>
+                                                      <option>Sep 2026 - Feb 2027</option>
+                                                      <option>Mar 2027 - Ago 2027</option>
+                                                      <option>Sep 2027 - Feb 2028</option>
+                                                      <option>Mar 2028 - Ago 2028</option>
+                                                     </select>
                                                   </div>
                                                   <div className="md:col-span-2">
                                                      <Label className="text-gray-300">Objetivos</Label>
