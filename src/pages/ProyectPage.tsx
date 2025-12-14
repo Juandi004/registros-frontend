@@ -18,6 +18,7 @@ import { AlertCircleIcon, Search } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
+import { json } from "stream/consumers"
 
 type Project = {
   id: string
@@ -104,8 +105,6 @@ const ProyectPage = () => {
   
   const [skillName, setSkillName] = useState('')
   const [skillDescription, setSkillDescription] = useState('')
-  const [skillLevel, setSkillLevel] = useState("") 
-  const [skillCategory, setSkillCategory] = useState("")
 
   const [viewProject, setViewProject] = useState<Project | null>(null)
   const [isViewOpen, setIsViewOpen] = useState(false)
@@ -145,19 +144,13 @@ const ProyectPage = () => {
       await axios.post('http://localhost:8000/api/skills', {
         name: skillName,
         description: skillDescription,
-        details: JSON.stringify({
-          level: skillLevel,
-          category: skillCategory
         })
-      })
       
       fetchSkillsData(); 
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
       setSkillName("");
       setSkillDescription("");
-      setSkillLevel("");   
-      setSkillCategory(""); 
       
     } catch (error) {
       console.log('Error al crear skill', error)
@@ -554,7 +547,7 @@ const ProyectPage = () => {
                               <Label>Descripción</Label>
                               <Input onChange={(e)=>setSkillDescription(e.target.value)} placeholder="Descripción breve" className="bg-gray-900 border-gray-600 mt-1" value={skillDescription}/>
                           </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            {/* <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <Label>Nivel</Label>
                                     <Input 
@@ -573,7 +566,7 @@ const ProyectPage = () => {
                                         className="bg-gray-900 border-gray-600 mt-1" 
                                     />
                                 </div>
-                            </div>
+                            </div> */}
                       </div>
                       <DialogFooter>
                         <DialogClose asChild><Button variant="ghost" className="hover:bg-gray-700">Cancelar</Button></DialogClose>
