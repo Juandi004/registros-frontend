@@ -782,17 +782,24 @@ const ProyectPage = () => {
                                 )}
                               </div>
                             </TableCell>
-
-                            <TableCell className="py-4 align-top">
+                            <TableCell className="py-4 align-top max-w-[250px]">
                               {p.objectives && p.objectives.length > 0 ? (
-                                <ul className="list-disc pl-4 space-y-1">
+                                <ul className="list-disc pl-4 space-y-1 break-words">
                                   {p.objectives.slice(0, 3).map((obj, i) => (
-                                    <li key={i} className="text-sm text-gray-400 leading-snug line-clamp-2">- {obj}</li>
+                                    <li key={i} className="text-sm text-gray-400 leading-snug line-clamp-2">
+                                      - {obj}
+                                    </li>
                                   ))}
-                                  {p.objectives.length > 3 && <li className="text-xs text-cyan-500 italic">... y {p.objectives.length - 3} más</li>}
+                                  {p.objectives.length > 3 && (
+                                    <li className="text-xs text-cyan-500 italic">
+                                      ... y {p.objectives.length - 3} más
+                                    </li>
+                                  )}
                                 </ul>
                               ) : (
-                                <span className="text-xs text-gray-600 italic">Sin objetivos registrados</span>
+                                <span className="text-xs text-gray-600 italic">
+                                  Sin objetivos registrados
+                                </span>
                               )}
                             </TableCell>
                             <TableCell className="py-4 align-top">
