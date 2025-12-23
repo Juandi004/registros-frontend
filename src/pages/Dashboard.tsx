@@ -2,8 +2,7 @@ import Sidebar from "@/components/SideBar"
 import { useEffect, useState } from "react"
 import axios from "axios"
 import { 
-  FolderGit2, 
-  Users, 
+  FolderGit2,  
   GraduationCap, 
   Code2, 
   Loader2, 
@@ -214,7 +213,6 @@ const Dashboard = () => {
                           </div>
                           <div>
                             <h4 className="font-semibold text-gray-200">{career.name}</h4>
-                            <p className="text-xs text-gray-500">ID: ...{career.id.slice(-6)}</p>
                           </div>
                         </div>
                       ))}
