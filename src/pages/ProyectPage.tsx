@@ -29,6 +29,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
+import { LoadingOverlay } from "@/components/ui/LoadingOverlay"
 
 const skillSchema = z.object({
   name: z.string().min(1, "El nombre es obligatorio"),
@@ -136,6 +137,10 @@ const ProyectPage = () => {
 
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
+  
+  // NUEVO ESTADO: Para controlar el diálogo de crear Skill
+  const [isSkillOpen, setIsSkillOpen] = useState(false)
+
   const [editingProject, setEditingProject] = useState<Project | null>(null)
 
   const createSkillForm = useForm<z.infer<typeof skillSchema>>({
@@ -199,7 +204,7 @@ const ProyectPage = () => {
   }
 
   const handleCreateSkill = async (values: z.infer<typeof skillSchema>) => {
-    setLoading(true)
+    setLoading(true) // Activa pantalla de carga
     try {
       await axios.post('http://localhost:8000/api/skills', {
         name: values.name,
@@ -211,13 +216,17 @@ const ProyectPage = () => {
       })
       fetchSkillsData();
       setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
       createSkillForm.reset();
+      
+      // CAMBIO: Cerramos el modal de skill automáticamente
+      setIsSkillOpen(false);
+
+      setTimeout(() => setSuccess(false), 3000);
     } catch (error) {
       setErrorAlert(true);
       setTimeout(() => setErrorAlert(false), 3000);
     } finally {
-      setLoading(false)
+      setLoading(false) // Desactiva pantalla de carga SIEMPRE
     }
   }
 
@@ -661,7 +670,8 @@ const ProyectPage = () => {
             <div className="bg-gray-800 rounded-xl border border-gray-700 shadow-xl overflow-hidden">
               <div className="p-4 border-b border-gray-700 bg-gray-900/30 flex justify-between items-center">
                 <h2 className="text-lg font-bold text-white">Directorio Completo de Proyectos</h2>
-                <Dialog>
+                {/* DIÁLOGO CONTROLADO PARA CREAR SKILL */}
+                <Dialog open={isSkillOpen} onOpenChange={setIsSkillOpen}>
                   <DialogTrigger asChild>
                     <Button className="bg-green-600 hover:bg-green-700 text-white font-semibold flex items-center gap-2 text-sm">
                       <Plus className="w-4 h-4" /> Nueva Skill
@@ -701,6 +711,7 @@ const ProyectPage = () => {
                       <TableHead className="text-gray-300 font-bold min-w-[250px]">Proyecto</TableHead>
                       <TableHead className="text-gray-300 font-bold">Detalles & Skills</TableHead>
                       <TableHead className="text-gray-300 font-bold min-w-[150px]">Objetivos</TableHead>
+                      <TableHead className="text-gray-300 font-bold min-w-[150px]">Entregables</TableHead>
                       <TableHead className="text-gray-300 font-bold min-w-[150px]">Fechas & Estado</TableHead>
                       <TableHead className="text-gray-300 font-bold text-right">Acciones</TableHead>
                     </TableRow>
@@ -708,7 +719,7 @@ const ProyectPage = () => {
                   <TableBody>
                     {projects.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center h-32 text-gray-500">No se encontraron proyectos.</TableCell>
+                        <TableCell colSpan={6} className="text-center h-32 text-gray-500">No se encontraron proyectos.</TableCell>
                       </TableRow>
                     ) : (
                       projects.filter(p => {
@@ -741,7 +752,13 @@ const ProyectPage = () => {
                           >
                             <TableCell className="py-4 align-top">
                               <div className="space-y-2">
-                                <p className="text-white font-bold text-lg leading-tight">{p.name}</p>
+                                {/* NOMBRE DEL PROYECTO: UNA LÍNEA + TRUNCATE + ANCHO MÁXIMO */}
+                                <p 
+                                  className="text-white font-bold text-lg leading-tight truncate w-[375px]" 
+                                  title={p.name}
+                                >
+                                  {p.name}
+                                </p>
                                 <div className="space-y-1 text-sm text-gray-400">
                                   <div className="flex items-center gap-2"><GraduationCap className="w-3 h-3" /> {careerName || "Sin Carrera"}</div>
                                   <div className="flex items-center gap-2"><BookOpen className="w-3 h-3" /> {p.cycle}</div>
@@ -782,6 +799,7 @@ const ProyectPage = () => {
                                 )}
                               </div>
                             </TableCell>
+
                             <TableCell className="py-4 align-top max-w-[250px]">
                               {p.objectives && p.objectives.length > 0 ? (
                                 <ul className="list-disc pl-4 space-y-1 break-words">
@@ -802,6 +820,28 @@ const ProyectPage = () => {
                                 </span>
                               )}
                             </TableCell>
+
+                            <TableCell className="py-4 align-top max-w-[250px]">
+                              {p.deliverables && p.deliverables.length > 0 ? (
+                                <ul className="list-disc pl-4 space-y-1 break-words">
+                                  {p.deliverables.slice(0, 3).map((del, i) => (
+                                    <li key={i} className="text-sm text-gray-400 leading-snug line-clamp-2">
+                                      - {del}
+                                    </li>
+                                  ))}
+                                  {p.deliverables.length > 3 && (
+                                    <li className="text-xs text-cyan-500 italic">
+                                      ... y {p.deliverables.length - 3} más
+                                    </li>
+                                  )}
+                                </ul>
+                              ) : (
+                                <span className="text-xs text-gray-600 italic">
+                                  Sin entregables
+                                </span>
+                              )}
+                            </TableCell>
+
                             <TableCell className="py-4 align-top">
                               <div className="space-y-3">
                                 <Badge variant="outline" className={`${p.status === 'Finalizado' ? 'text-green-400 border-green-900 bg-green-900/20' : 'text-cyan-400 border-cyan-900 bg-cyan-900/20'}`}>
@@ -847,6 +887,14 @@ const ProyectPage = () => {
             {success && <Alert className="fixed top-5 right-5 w-auto bg-green-600 border-green-500 text-white shadow-xl animate-in slide-in-from-right"><CheckCircle2Icon /><AlertTitle>Éxito</AlertTitle><AlertDescription>Operación realizada correctamente.</AlertDescription></Alert>}
             {errorAlert && <Alert className="fixed top-5 right-5 w-auto bg-red-600 border-red-500 text-white shadow-xl animate-in slide-in-from-right"><AlertCircleIcon /><AlertTitle>Error</AlertTitle><AlertDescription>Hubo un problema.</AlertDescription></Alert>}
             {deleteSuccess && <Alert className="fixed top-5 right-5 w-auto bg-green-600 border-green-500 text-white shadow-xl animate-in slide-in-from-right"><CheckCircle2Icon /><AlertTitle>Eliminado</AlertTitle><AlertDescription>El proyecto ha sido eliminado.</AlertDescription></Alert>}
+            
+            {errorDelete && (
+                <Alert className="fixed top-5 right-5 w-auto bg-red-600 border-red-500 text-white shadow-xl animate-in slide-in-from-right">
+                    <AlertCircleIcon />
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>No se pudo eliminar el proyecto.</AlertDescription>
+                </Alert>
+            )}
           </div>
         )}
       </main>
@@ -954,6 +1002,8 @@ const ProyectPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+      
+      <LoadingOverlay isVisible={loading} message="Procesando..." />
 
     </div>
   )
