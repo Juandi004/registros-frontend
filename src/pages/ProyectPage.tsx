@@ -36,7 +36,9 @@ import {
   Check, 
   Clock, 
   AlertCircleIcon, 
-  Search 
+  Search,
+  Link as LinkIcon,
+  ExternalLink
 } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Label } from "@/components/ui/label"
@@ -55,7 +57,6 @@ import {
 } from "@/components/ui/form"
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay"
 
-// --- SCHEMAS ---
 const skillSchema = z.object({
   name: z.string().min(1, "El nombre es obligatorio"),
   description: z.string().min(1, "La descripción es obligatoria"),
@@ -66,16 +67,16 @@ const projectSchema = z.object({
   description: z.string().min(1, "La problemática es obligatoria"),
   summary: z.string().optional(),
   deliverables: z.string().optional(),
+  link: z.string().optional(), 
   cycle: z.string().min(1, "Selecciona un ciclo"),
   academic_period: z.string().min(1, "Selecciona un periodo"),
   startDate: z.string().min(1, "Fecha de inicio requerida"),
   endDate: z.string().min(1, "Fecha de fin requerida"),
   careerId: z.string().min(1, "Selecciona una carrera"),
   objectives: z.string().min(1, "Debes ingresar al menos un objetivo"),
-  status: z.string().optional(), // Opcional porque lo manejamos en lógica si no es admin
+  status: z.string().optional(),
 })
 
-// --- TYPES ---
 type Project = {
   id: string
   name: string
@@ -132,7 +133,6 @@ type Role = {
 }
 
 const ProyectPage = () => {
-  // --- STATES ---
   const [projects, setProjects] = useState<Project[]>([])
   const [skills, setSkills] = useState<Skill[]>([])
   const [projectSkills, setProjectSkills] = useState<ProjectSkill[]>([])
@@ -148,13 +148,11 @@ const ProyectPage = () => {
   const [role, setRole] = useState<Role[]>([])
   const [userProjects, setUserProjects] = useState<Project[]>([])
 
-  // UI States
   const [success, setSuccess] = useState(false)
   const [errorAlert, setErrorAlert] = useState(false)
   const [deleteSuccess, setDeleteSuccess] = useState(false)
   const [errorDelete, setErrorDelete] = useState(false)
 
-  // Filters
   const [search, setSearch] = useState("")
   const [skillSearch, setSkillSearch] = useState("")
   const [filterStatus, setFilterStatus] = useState("TODOS");
@@ -163,7 +161,6 @@ const ProyectPage = () => {
   const statusOptions = ["TODOS", "pendiente", "en progreso", "completado"];
   const statusUserProjects = ["TODOS", "mis proyectos"]
 
-  // Dialogs
   const [viewProject, setViewProject] = useState<Project | null>(null)
   const [isViewOpen, setIsViewOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
@@ -171,7 +168,6 @@ const ProyectPage = () => {
   const [isSkillOpen, setIsSkillOpen] = useState(false)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
 
-  // --- FORMS ---
   const createSkillForm = useForm<z.infer<typeof skillSchema>>({
     resolver: zodResolver(skillSchema),
     defaultValues: { name: "", description: "" }
@@ -180,7 +176,7 @@ const ProyectPage = () => {
   const createProjectForm = useForm<z.infer<typeof projectSchema>>({
     resolver: zodResolver(projectSchema),
     defaultValues: {
-      name: "", description: "", summary: "", deliverables: "",
+      name: "", description: "", summary: "", deliverables: "", link: "",
       cycle: "", academic_period: "", startDate: "", endDate: "",
       careerId: "", objectives: "", status: "en progreso",
     }
@@ -189,22 +185,22 @@ const ProyectPage = () => {
   const editProjectForm = useForm<z.infer<typeof projectSchema>>({
     resolver: zodResolver(projectSchema),
     defaultValues: {
-      name: "", description: "", summary: "", deliverables: "",
+      name: "", description: "", summary: "", deliverables: "", link: "",
       cycle: "", academic_period: "", startDate: "", endDate: "",
       careerId: "", objectives: "", status: "",
     }
   })
 
-  // --- DATA FETCHING ---
   const fetchProjects = async () => {
     setLoadingProjects(true)
     try {
       const res = await axios.get("http://localhost:8000/api/projects", {
         headers: { Authorization: `Bearer ${accessToken}` }
       })
-      setProjects(res.data.data)
+      setProjects(res.data.data || [])
     } catch (error) {
       console.log(error)
+      setProjects([])
     }
     setLoadingProjects(false)
   }
@@ -216,7 +212,7 @@ const ProyectPage = () => {
         headers: { Authorization: `Bearer ${accessToken}` }
       });
       const projectsOnly = response.data.map((item: any) => item.project);
-      setUserProjects(projectsOnly);
+      setUserProjects(projectsOnly || []);
     } catch (error) {
       setUserProjects([]);
     }
@@ -227,11 +223,11 @@ const ProyectPage = () => {
       const resSkills = await axios.get('http://localhost:8000/api/skills', {
         headers: { Authorization: `Bearer ${accessToken}` }
       })
-      setSkills(resSkills.data.data)
+      setSkills(resSkills.data.data || [])
       const resProjectSkills = await axios.get('http://localhost:8000/api/porjects-skills', {
         headers: { Authorization: `Bearer ${accessToken}` }
       })
-      setProjectSkills(resProjectSkills.data.data)
+      setProjectSkills(resProjectSkills.data.data || [])
     } catch (error) {
       console.log(error)
     }
@@ -244,8 +240,8 @@ const ProyectPage = () => {
           axios.get('http://localhost:8000/api/careers', { headers: { Authorization: `Bearer ${accessToken}` } }),
           axios.get('http://localhost:8000/api/roles')
         ])
-        setCareers(careersRes.data.data)
-        setRole(rolesRes.data.data)
+        setCareers(careersRes.data.data || [])
+        setRole(rolesRes.data.data || [])
       } catch (error) {
         console.log(error)
       }
@@ -269,8 +265,7 @@ const ProyectPage = () => {
     fetchUserProjects()
   }, [])
 
-  // --- COMPUTED VALUES ---
-  const roleName = user ? role.find(r => r.id === user.roleId)?.name : "";
+  const roleName = user && role.length > 0 ? role.find(r => r.id === user.roleId)?.name : "";
 
   const getProjectSkillsDisplay = (projectId: string) => {
     const relations = projectSkills.filter(ps => ps.projectId === projectId);
@@ -282,9 +277,12 @@ const ProyectPage = () => {
     return new Date(dateString).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });
   }
 
-  // --- HANDLERS ---
+  const parseDeliverables = (items: string[]) => {
+    const link = items.find(item => item.startsWith('http') || item.startsWith('https'));
+    const textItems = items.filter(item => !item.startsWith('http') && !item.startsWith('https'));
+    return { link, textItems };
+  }
 
-  // 1. Crear Skill
   const handleCreateSkill = async (values: z.infer<typeof skillSchema>) => {
     setLoading(true)
     try {
@@ -306,34 +304,44 @@ const ProyectPage = () => {
     }
   }
 
-  // 2. Crear Proyecto (Lógica Stand-by)
   const handleCreateProyect = async (values: z.infer<typeof projectSchema>) => {
     try {
       setLoading(true)
       const objectivesArray = values.objectives.split("\n").map(l => l.trim()).filter(l => l.length > 0)
-      const deliverablesArray = values.deliverables ? values.deliverables.split("\n").map(l => l.trim()).filter(l => l.length > 0) : []
+      
+      let deliverablesArray = values.deliverables ? values.deliverables.split("\n").map(l => l.trim()).filter(l => l.length > 0) : []
+      if (values.link && values.link.trim() !== "") {
+        deliverablesArray.push(values.link.trim());
+      }
 
-      // Si es ADMIN usa el estado del form, si no, fuerza "pendiente"
       const initialStatus = roleName === "ADMIN" ? (values.status || "en progreso") : "pendiente";
 
       const res = await axios.post('http://localhost:8000/api/projects', {
-        ...values,
+        name: values.name,
+        description: values.description,
+        summary: values.summary,
+        cycle: values.cycle,
+        academic_period: values.academic_period,
+        careerId: values.careerId,
         status: initialStatus,
         objectives: objectivesArray,
-        deliverables: deliverablesArray,
+        deliverables: deliverablesArray, 
         startDate: new Date(values.startDate).toISOString(),
         endDate: new Date(values.endDate).toISOString(),
         createdBy: userId,
       });
 
       const projectId = res.data.id;
-      await axios.post('http://localhost:8000/api/users-projects', { userId, projectId });
+      if (projectId) {
+        await axios.post('http://localhost:8000/api/users-projects', { userId, projectId });
 
-      if (selectedSkills.length > 0) {
-        await Promise.all(selectedSkills.map(skillId =>
-          axios.post('http://localhost:8000/api/porjects-skills', { projectId, skillId })
-        ));
+        if (selectedSkills.length > 0) {
+          await Promise.all(selectedSkills.map(skillId =>
+            axios.post('http://localhost:8000/api/porjects-skills', { projectId, skillId })
+          ));
+        }
       }
+      
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
       createProjectForm.reset();
@@ -343,6 +351,7 @@ const ProyectPage = () => {
       await fetchUserProjects();
       await fetchSkillsData();
     } catch (error) {
+      console.error(error);
       setErrorAlert(true);
       setTimeout(() => setErrorAlert(false), 3000);
     } finally {
@@ -350,7 +359,6 @@ const ProyectPage = () => {
     }
   };
 
-  // 3. Aprobar Proyecto (Solo Admin)
   const handleApproveProject = async (e: React.MouseEvent, project: Project) => {
     e.stopPropagation();
     setLoading(true);
@@ -369,16 +377,25 @@ const ProyectPage = () => {
     }
   };
 
-  // 4. Editar Proyecto
   const handleEditProyect = async (values: z.infer<typeof projectSchema>) => {
     if (!editingProject) return
     setLoading(true)
     try {
       const objectivesArray = values.objectives.split("\n").map(l => l.trim()).filter(l => l.length > 0)
-      const deliverablesArray = values.deliverables ? values.deliverables.split("\n").map(l => l.trim()).filter(l => l.length > 0) : []
+      
+      let deliverablesArray = values.deliverables ? values.deliverables.split("\n").map(l => l.trim()).filter(l => l.length > 0) : []
+      if (values.link && values.link.trim() !== "") {
+        deliverablesArray.push(values.link.trim());
+      }
 
       await axios.patch(`http://localhost:8000/api/projects/${editingProject.id}`, {
-        ...values,
+        name: values.name,
+        description: values.description,
+        summary: values.summary,
+        cycle: values.cycle,
+        academic_period: values.academic_period,
+        careerId: values.careerId,
+        status: values.status, 
         objectives: objectivesArray,
         deliverables: deliverablesArray,
         startDate: new Date(values.startDate).toISOString(),
@@ -394,7 +411,6 @@ const ProyectPage = () => {
           axios.post('http://localhost:8000/api/porjects-skills', { projectId: editingProject.id, skillId })
         ));
       }
-
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
       await fetchProjects();
@@ -408,7 +424,6 @@ const ProyectPage = () => {
     }
   };
 
-  // 5. Eliminar Proyecto
   const handleDeleteProyect = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation()
     try {
@@ -433,11 +448,14 @@ const ProyectPage = () => {
       .map(ps => ps.skillId);
     setSelectedSkills(existingSkillIds);
 
+    const { link, textItems } = parseDeliverables(project.deliverables || []);
+
     editProjectForm.reset({
       name: project.name,
       description: project.description,
       summary: project.summary || "",
-      deliverables: project.deliverables?.join("\n") || "",
+      deliverables: textItems.join("\n") || "",
+      link: link || "",
       cycle: project.cycle,
       academic_period: project.academic_period,
       startDate: project.startDate ? project.startDate.split('T')[0] : "",
@@ -455,7 +473,6 @@ const ProyectPage = () => {
     );
   }
 
-  // --- RENDER HELPERS ---
   const renderFormFields = (form: any) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
       <FormField control={form.control} name="name" render={({ field }) => (
@@ -536,7 +553,6 @@ const ProyectPage = () => {
         </FormItem>
       )} />
       
-      {/* SKILLS SELECTOR */}
       <div className="md:col-span-2 bg-gray-900/50 p-4 rounded-lg border border-gray-700">
         <Label className="text-cyan-400 font-bold mb-3 block items-center gap-2">
           <Code2 className="w-4 h-4" /> Habilidades Requeridas
@@ -577,13 +593,19 @@ const ProyectPage = () => {
       )} />
       <FormField control={form.control} name="deliverables" render={({ field }) => (
         <FormItem className="md:col-span-2">
-          <FormLabel className="text-gray-300">Entregables (uno por línea)</FormLabel>
+          <FormLabel className="text-gray-300">Entregables (Texto)</FormLabel>
           <FormControl><Textarea className="bg-gray-900 border-gray-600 mt-1 h-32" placeholder="- Entregable 1&#10;- Entregable 2" {...field} /></FormControl>
           <FormMessage className="text-red-500 text-xs" />
         </FormItem>
       )} />
+      <FormField control={form.control} name="link" render={({ field }) => (
+        <FormItem className="md:col-span-2">
+          <FormLabel className="text-gray-300 flex items-center gap-2"><LinkIcon className="w-3 h-3" /> Enlace de Repositorio/Drive</FormLabel>
+          <FormControl><Input className="bg-gray-900 border-gray-600 mt-1" placeholder="https://..." {...field} /></FormControl>
+          <FormMessage className="text-red-500 text-xs" />
+        </FormItem>
+      )} />
 
-      {/* Selector de estado: Solo visible para ADMIN */}
       {roleName === "ADMIN" && (
         <FormField control={form.control} name="status" render={({ field }) => (
           <FormItem className="md:col-span-2">
@@ -608,7 +630,6 @@ const ProyectPage = () => {
       <Sidebar />
       <main className="flex-1 ml-0 md:ml-64 p-6 transition-all w-full overflow-x-hidden">
         
-        {/* HEADER */}
         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-8 gap-6">
           <div className="flex-shrink-0">
             <h2 className="text-3xl font-bold text-white tracking-tight">Panel de Proyectos</h2>
@@ -628,7 +649,6 @@ const ProyectPage = () => {
                 />
               </div>
 
-              {/* DIALOGO CREAR PROYECTO */}
               <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                 <DialogTrigger asChild>
                   <Button className="bg-cyan-600 hover:bg-cyan-700 text-white font-semibold shadow-lg shadow-cyan-900/20 whitespace-nowrap" onClick={() => { createProjectForm.reset(); setSelectedSkills([]) }}>
@@ -652,7 +672,6 @@ const ProyectPage = () => {
               </Dialog>
             </div>
 
-            {/* FILTROS */}
             <div className="flex flex-col sm:flex-row gap-6 p-1">
               <div className="space-y-1">
                 <h5 className="text-xs font-semibold text-cyan-400/80 uppercase tracking-wide">Estado</h5>
@@ -705,7 +724,6 @@ const ProyectPage = () => {
             <div className="bg-gray-800 rounded-xl border border-gray-700 shadow-xl overflow-hidden">
               <div className="p-4 border-b border-gray-700 bg-gray-900/30 flex justify-between items-center">
                 <h2 className="text-lg font-bold text-white">Directorio Completo de Proyectos</h2>
-                {/* DIÁLOGO CREAR SKILL */}
                 <Dialog open={isSkillOpen} onOpenChange={setIsSkillOpen}>
                   <DialogTrigger asChild>
                     <Button className="bg-green-600 hover:bg-green-700 text-white font-semibold flex items-center gap-2 text-sm">
@@ -774,9 +792,7 @@ const ProyectPage = () => {
                         const matchesUser = filterStatusUserProjects === "TODOS" ||
                           (filterStatusUserProjects === "mis proyectos" && isOwner);
 
-                        // --- FILTRO DE VISIBILIDAD ---
                         const isAdmin = roleName === "ADMIN";
-                        // Si no es admin ni dueño, ocultar pendientes
                         if (!isAdmin && !isOwner && p.status === "pendiente") return false;
 
                         return matchesSearch && matchesStatus && matchesUser;
@@ -785,6 +801,7 @@ const ProyectPage = () => {
                         const isAdmin = roleName === "ADMIN";
                         const isOwner = p.createdBy === userId || userProjects.some((up) => up.id === p.id);
                         const mySkills = getProjectSkillsDisplay(p.id);
+                        const { link, textItems } = parseDeliverables(p.deliverables || []);
 
                         return (
                           <TableRow
@@ -842,14 +859,22 @@ const ProyectPage = () => {
                             </TableCell>
 
                             <TableCell className="py-4 align-top max-w-[250px]">
-                              {p.deliverables && p.deliverables.length > 0 ? (
+                              {textItems && textItems.length > 0 ? (
                                 <ul className="list-disc pl-4 space-y-1 break-words">
-                                  {p.deliverables.slice(0, 3).map((del, i) => (
+                                  {textItems.slice(0, 3).map((del, i) => (
                                     <li key={i} className="text-sm text-gray-400 leading-snug line-clamp-2">- {del}</li>
                                   ))}
-                                  {p.deliverables.length > 3 && <li className="text-xs text-cyan-500 italic">... y {p.deliverables.length - 3} más</li>}
+                                  {textItems.length > 3 && <li className="text-xs text-cyan-500 italic">... y {textItems.length - 3} más</li>}
                                 </ul>
                               ) : <span className="text-xs text-gray-600 italic">Sin entregables</span>}
+                              
+                              {link && (
+                                <div className="mt-2">
+                                  <a href={link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 hover:underline" onClick={(e) => e.stopPropagation()}>
+                                    <LinkIcon className="w-3 h-3" /> Ver enlace
+                                  </a>
+                                </div>
+                              )}
                             </TableCell>
 
                             <TableCell className="py-4 align-top">
@@ -872,19 +897,16 @@ const ProyectPage = () => {
 
                             <TableCell className="py-4 align-top text-right">
                               <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                                {/* BOTÓN APROBAR (Solo Admin en pendiente) */}
                                 {isAdmin && p.status === 'pendiente' && (
                                   <Button size="icon" className="h-8 w-8 bg-green-600 hover:bg-green-700 text-white mr-2" title="Aprobar Proyecto" onClick={(e) => handleApproveProject(e, p)}>
                                     <Check className="w-4 h-4" />
                                   </Button>
                                 )}
-                                {/* BOTÓN EDITAR (Admin o Dueño) */}
                                 {(isAdmin || isOwner) && (
                                   <Button variant="ghost" size="icon" className="h-8 w-8 text-cyan-500 hover:text-cyan-400 hover:bg-cyan-900/20" onClick={() => loadProjectData(p)}>
                                     <Pencil className="w-4 h-4" />
                                   </Button>
                                 )}
-                                {/* BOTÓN ELIMINAR (Solo Admin) */}
                                 {isAdmin && (
                                   <Dialog>
                                     <DialogTrigger asChild>
@@ -910,7 +932,6 @@ const ProyectPage = () => {
               </div>
             </div>
 
-            {/* ALERTS */}
             {success && <Alert className="fixed top-5 right-5 w-auto bg-green-600 border-green-500 text-white shadow-xl animate-in slide-in-from-right"><CheckCircle2Icon /><AlertTitle>Éxito</AlertTitle><AlertDescription>Operación realizada correctamente.</AlertDescription></Alert>}
             {errorAlert && <Alert className="fixed top-5 right-5 w-auto bg-red-600 border-red-500 text-white shadow-xl animate-in slide-in-from-right"><AlertCircleIcon /><AlertTitle>Error</AlertTitle><AlertDescription>Hubo un problema.</AlertDescription></Alert>}
             {deleteSuccess && <Alert className="fixed top-5 right-5 w-auto bg-green-600 border-green-500 text-white shadow-xl animate-in slide-in-from-right"><CheckCircle2Icon /><AlertTitle>Eliminado</AlertTitle><AlertDescription>El proyecto ha sido eliminado.</AlertDescription></Alert>}
@@ -919,7 +940,6 @@ const ProyectPage = () => {
         )}
       </main>
 
-      {/* DIALOGO EDITAR */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto bg-gray-800 border-gray-700 text-white">
           <DialogHeader><DialogTitle className="text-xl font-bold text-cyan-400">Editar Proyecto</DialogTitle></DialogHeader>
@@ -935,7 +955,6 @@ const ProyectPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* DIALOGO VER DETALLES */}
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
         <DialogContent className="min-w-2xl w-full max-w-4xl bg-slate-900 border-slate-700 text-slate-100 p-0">
           <div className="max-h-[80vh] overflow-y-auto p-6 space-y-6 break-words break-all">
@@ -983,14 +1002,29 @@ const ProyectPage = () => {
                     </ul>
                   </div>
                 )}
-                {viewProject.deliverables?.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-white mb-2 border-b border-slate-700 pb-1">Entregables</h3>
-                    <ul className="list-disc pl-5 space-y-2 text-slate-300 break-words">
-                      {viewProject.deliverables.map((obj, i) => <li key={i}>{obj}</li>)}
-                    </ul>
-                  </div>
-                )}
+                {viewProject.deliverables?.length > 0 && (() => {
+                  const { link, textItems } = parseDeliverables(viewProject.deliverables);
+                  return (
+                    <div>
+                      <h3 className="text-lg font-semibold text-white mb-2 border-b border-slate-700 pb-1">Entregables</h3>
+                      {textItems.length > 0 ? (
+                        <ul className="list-disc pl-5 space-y-2 text-slate-300 break-words">
+                          {textItems.map((obj, i) => <li key={i}>{obj}</li>)}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-slate-500 italic">Sin entregables de texto</p>
+                      )}
+                      
+                      {link && (
+                        <div className="mt-4 pl-5">
+                          <a href={link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-cyan-400 hover:text-cyan-300 hover:underline bg-cyan-950/30 px-3 py-2 rounded border border-cyan-800">
+                            <ExternalLink className="w-4 h-4" /> Abrir enlace de repositorio/drive
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
                 <div>
                   <h3 className="text-lg font-semibold text-white mb-2 border-b border-slate-700 pb-1">Tecnologías / Skills</h3>
                   <div className="flex flex-wrap gap-2">
