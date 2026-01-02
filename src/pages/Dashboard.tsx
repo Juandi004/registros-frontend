@@ -9,18 +9,32 @@ import {
   ArrowRight,
   Clock,
   CheckCircle2,
-  AlertCircle
+  Eye 
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useNavigate } from "react-router-dom"
+import { 
+  Dialog, 
+  DialogHeader, 
+  DialogFooter, 
+  DialogTrigger, 
+  DialogContent, 
+  DialogTitle,   
+  DialogDescription,
+  DialogClose
+} from "@/components/ui/dialog"
 
-// Tipos basados en tu Schema de Prisma y respuestas de API
 type Career = {
   id: string
   name: string
   createdAt: string
+}
+
+type Skill = {
+  id: string
+  name: string
 }
 
 type Project = {
@@ -42,8 +56,11 @@ const Dashboard = () => {
     totalCareers: 0,
     totalSkills: 0
   })
+  
   const [recentProjects, setRecentProjects] = useState<Project[]>([])
   const [careersList, setCareersList] = useState<Career[]>([])
+  const [skillsList, setSkillsList] = useState<Skill[]>([])
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -71,8 +88,10 @@ const Dashboard = () => {
           setCareersList(careersData)
         }
         if (skillsRes.status === 'fulfilled') {
-           const total = skillsRes.value.data.meta?.total || skillsRes.value.data.data?.length || 0
+           const skillsData = skillsRes.value.data.data || []
+           const total = skillsRes.value.data.meta?.total || skillsData.length || 0
            setStats(prev => ({ ...prev, totalSkills: total }))
+           setSkillsList(skillsData)
         }
 
       } catch (error) {
@@ -86,24 +105,28 @@ const Dashboard = () => {
       fetchDashboardData()
     }
   }, [accessToken])
+
   const statCards = [
     { 
+      key: "projects",
       label: "Proyectos Registrados", 
       value: stats.totalProjects, 
       icon: FolderGit2, 
       color: "text-cyan-500", 
       bg: "bg-cyan-500/10",
-      desc: "Proyectos PIENSA activos"
+      desc: "Proyectos PIENSA registrados"
     },
     { 
+      key: "careers",
       label: "Carreras Ofertadas", 
       value: stats.totalCareers, 
       icon: GraduationCap, 
       color: "text-yellow-500", 
       bg: "bg-yellow-500/10",
-      desc: "Ingenierías disponibles"
+      desc: "Carreras de tercer nivel"
     },
     { 
+      key: "skills",
       label: "Habilidades Técnicas", 
       value: stats.totalSkills, 
       icon: Code2, 
@@ -112,6 +135,41 @@ const Dashboard = () => {
       desc: "Tecnologías registradas"
     },
   ]
+
+  const renderDialogContent = (key: string) => {
+    if (key === 'careers') {
+      return (
+        <div className="grid gap-4 py-4">
+          {careersList.length > 0 ? (
+             careersList.map(career => (
+              <div key={career.id} className="flex items-center p-3 bg-gray-800 rounded-md border border-gray-700">
+                <GraduationCap className="w-5 h-5 text-yellow-500 mr-3" />
+                <span className="text-sm font-medium text-gray-200">{career.name}</span>
+              </div>
+             ))
+          ) : (
+            <p className="text-gray-500">No hay carreras registradas.</p>
+          )}
+        </div>
+      )
+    }
+    if (key === 'skills') {
+      return (
+        <div className="flex flex-wrap gap-2 py-4">
+          {skillsList.length > 0 ? (
+            skillsList.map(skill => (
+              <Badge key={skill.id} variant="secondary" className="bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 px-3 py-1">
+                 {skill.name}
+              </Badge>
+            ))
+          ) : (
+            <p className="text-gray-500">No hay habilidades registradas.</p>
+          )}
+        </div>
+      )
+    }
+    return null
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-950 text-gray-100 font-sans">
@@ -137,7 +195,7 @@ const Dashboard = () => {
           <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {statCards.map((stat, index) => (
-                <Card key={index} className="bg-gray-900 border-gray-800 shadow-lg hover:border-gray-700 transition-all">
+                <Card key={index} className="bg-gray-900 border-gray-800 shadow-lg hover:border-gray-700 transition-all relative">
                   <CardContent className="p-6">
                     <div className="flex justify-between items-start">
                       <div>
@@ -148,11 +206,44 @@ const Dashboard = () => {
                         <stat.icon className={`w-6 h-6 ${stat.color}`} />
                       </div>
                     </div>
-                    <div className="mt-4 flex items-center text-xs text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3 text-green-500" /> 
-                        {stat.desc}
-                      </span>
+                    <div className="mt-4 flex items-center justify-between">
+                      <div className="flex items-center text-xs text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-green-500" /> 
+                          {stat.desc}
+                        </span>
+                      </div>
+
+                      {(stat.key === 'careers' || stat.key === 'skills') && (
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-6 text-xs text-cyan-400 hover:text-cyan-300 hover:bg-cyan-950 p-0 px-2">
+                              <Eye className="w-3 h-3 mr-1" /> Ver lista
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="bg-gray-900 border-gray-800 text-white max-h-[80vh] overflow-y-auto">
+                            <DialogHeader>
+                              <DialogTitle className="text-xl flex items-center gap-2">
+                                <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                                Lista de {stat.label}
+                              </DialogTitle>
+                              <DialogDescription className="text-gray-400">
+                                Listado completo registrado en el sistema.
+                              </DialogDescription>
+                            </DialogHeader>
+                            
+                            {renderDialogContent(stat.key)}
+
+                            <DialogFooter>
+                                <DialogClose asChild>
+                                  <Button type="button" variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800">
+                                    Cerrar
+                                  </Button>
+                                </DialogClose>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -160,7 +251,7 @@ const Dashboard = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <Card className="bg-gray-900 border-gray-800 shadow-lg">
+              <Card className="col-span-1 lg:col-span-3 bg-gray-900 border-gray-800 shadow-lg">
                 <CardHeader className="border-b border-gray-800 pb-4">
                   <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
                     <Clock className="w-5 h-5 text-cyan-500"/>
@@ -171,16 +262,14 @@ const Dashboard = () => {
                   {recentProjects.length > 0 ? (
                     <div className="divide-y divide-gray-800">
                       {recentProjects.map((proj) => (
-                        <div key={proj.id} className="p-4 hover:bg-gray-800/50 transition-colors">
-                          <div className="flex justify-between items-start mb-1">
+                        <div key={proj.id} className="p-4 hover:bg-gray-800/50 transition-colors flex justify-between items-center">
+                          <div>
                             <h5 className="font-semibold text-gray-200 line-clamp-1">{proj.name}</h5>
-                            <Badge variant="outline" className={`text-xs ${proj.status === 'Finalizado' ? 'text-green-400 border-green-800' : 'text-cyan-400 border-cyan-800'}`}>
-                              {proj.status || 'Activo'}
-                            </Badge>
+                            <span className="text-xs text-gray-500">{proj.cycle || 'Ciclo sin definir'}</span>
                           </div>
-                          <div className="flex justify-between items-center text-xs text-gray-500 mt-2">
-                            <span>{proj.cycle || 'Ciclo sin definir'}</span>
-                          </div>
+                          <Badge variant="outline" className={`text-xs ${proj.status === 'Finalizado' ? 'text-green-400 border-green-800' : 'text-cyan-400 border-cyan-800'}`}>
+                            {proj.status || 'Activo'}
+                          </Badge>
                         </div>
                       ))}
                       <div className="p-4">
@@ -192,35 +281,6 @@ const Dashboard = () => {
                   ) : (
                     <div className="p-8 text-center text-gray-500 text-sm">
                       No hay actividad reciente.
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-                            <Card className="lg:col-span-2 bg-gray-900 border-gray-800 shadow-lg">
-                <CardHeader className="border-b border-gray-800 pb-4">
-                  <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
-                    <GraduationCap className="w-5 h-5 text-yellow-500"/>
-                    Oferta Académica (Carreras)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  {careersList.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {careersList.map((career) => (
-                        <div key={career.id} className="flex items-center p-4 bg-gray-800/50 rounded-lg border border-gray-700/50 hover:bg-gray-800 transition-colors">
-                          <div className="h-10 w-10 rounded-full bg-yellow-500/10 flex items-center justify-center mr-4">
-                            <span className="text-yellow-500 font-bold text-lg">{career.name.charAt(0)}</span>
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-gray-200">{career.name}</h4>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-10 text-gray-500">
-                      <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50"/>
-                      No se encontraron carreras registradas.
                     </div>
                   )}
                 </CardContent>

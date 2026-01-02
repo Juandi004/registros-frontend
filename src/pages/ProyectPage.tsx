@@ -9,12 +9,36 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
-import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTrigger, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { 
+  Dialog, 
+  DialogClose, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTrigger, 
+  DialogFooter, 
+  DialogTitle, 
+  DialogDescription 
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import axios from "axios"
-import { Loader2, CalendarIcon, GraduationCap, BookOpen, FileText, Code2, CheckCircle2Icon, Pencil, Trash, Plus, User2 } from "lucide-react"
+import { 
+  Loader2, 
+  CalendarIcon, 
+  GraduationCap, 
+  BookOpen, 
+  FileText, 
+  Code2, 
+  CheckCircle2Icon, 
+  Pencil, 
+  Trash, 
+  Plus, 
+  User2, 
+  Check, 
+  Clock, 
+  AlertCircleIcon, 
+  Search 
+} from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircleIcon, Search } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
@@ -31,6 +55,7 @@ import {
 } from "@/components/ui/form"
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay"
 
+// --- SCHEMAS ---
 const skillSchema = z.object({
   name: z.string().min(1, "El nombre es obligatorio"),
   description: z.string().min(1, "La descripción es obligatoria"),
@@ -47,9 +72,10 @@ const projectSchema = z.object({
   endDate: z.string().min(1, "Fecha de fin requerida"),
   careerId: z.string().min(1, "Selecciona una carrera"),
   objectives: z.string().min(1, "Debes ingresar al menos un objetivo"),
-  status: z.string().min(1, "El estado es obligatorio"),
+  status: z.string().optional(), // Opcional porque lo manejamos en lógica si no es admin
 })
 
+// --- TYPES ---
 type Project = {
   id: string
   name: string
@@ -91,7 +117,7 @@ type Skill = {
   id: string,
   name: string,
   description: string,
-  details: JSON
+  details: any
 }
 
 type ProjectSkill = {
@@ -106,43 +132,46 @@ type Role = {
 }
 
 const ProyectPage = () => {
+  // --- STATES ---
   const [projects, setProjects] = useState<Project[]>([])
   const [skills, setSkills] = useState<Skill[]>([])
   const [projectSkills, setProjectSkills] = useState<ProjectSkill[]>([])
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
 
   const accessToken = localStorage.getItem("token")
+  const userId = localStorage.getItem('id')
+
   const [loadingProjects, setLoadingProjects] = useState(false)
   const [loading, setLoading] = useState(false)
   const [careers, setCareers] = useState<Career[]>([])
+  const [user, setUser] = useState<User | null>(null)
+  const [role, setRole] = useState<Role[]>([])
+  const [userProjects, setUserProjects] = useState<Project[]>([])
+
+  // UI States
   const [success, setSuccess] = useState(false)
   const [errorAlert, setErrorAlert] = useState(false)
-  const [user, setUser] = useState<User | null>(null)
-  const userId = localStorage.getItem('id')
+  const [deleteSuccess, setDeleteSuccess] = useState(false)
+  const [errorDelete, setErrorDelete] = useState(false)
 
+  // Filters
   const [search, setSearch] = useState("")
   const [skillSearch, setSkillSearch] = useState("")
   const [filterStatus, setFilterStatus] = useState("TODOS");
   const [filterStatusUserProjects, setFilterStatusUserProjects] = useState("TODOS")
-  const statusOptions = ["TODOS", "en progreso", "completado"];
-  const statusUserProjects = ["TODOS", "mis proyectos"]
   
-  const [deleteSuccess, setDeleteSuccess] = useState(false)
-  const [errorDelete, setErrorDelete] = useState(false)
-  const [role, setRole] = useState<Role[]>([])
-  const [userProjects, setUserProjects] = useState<Project[]>([])
+  const statusOptions = ["TODOS", "pendiente", "en progreso", "completado"];
+  const statusUserProjects = ["TODOS", "mis proyectos"]
 
+  // Dialogs
   const [viewProject, setViewProject] = useState<Project | null>(null)
   const [isViewOpen, setIsViewOpen] = useState(false)
-
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
-  
-  // NUEVO ESTADO: Para controlar el diálogo de crear Skill
   const [isSkillOpen, setIsSkillOpen] = useState(false)
-
   const [editingProject, setEditingProject] = useState<Project | null>(null)
 
+  // --- FORMS ---
   const createSkillForm = useForm<z.infer<typeof skillSchema>>({
     resolver: zodResolver(skillSchema),
     defaultValues: { name: "", description: "" }
@@ -151,17 +180,9 @@ const ProyectPage = () => {
   const createProjectForm = useForm<z.infer<typeof projectSchema>>({
     resolver: zodResolver(projectSchema),
     defaultValues: {
-      name: "",
-      description: "",
-      summary: "",
-      deliverables: "",
-      cycle: "",
-      academic_period: "",
-      startDate: "",
-      endDate: "",
-      careerId: "",
-      objectives: "",
-      status: "en progreso",
+      name: "", description: "", summary: "", deliverables: "",
+      cycle: "", academic_period: "", startDate: "", endDate: "",
+      careerId: "", objectives: "", status: "en progreso",
     }
   })
 
@@ -174,6 +195,7 @@ const ProyectPage = () => {
     }
   })
 
+  // --- DATA FETCHING ---
   const fetchProjects = async () => {
     setLoadingProjects(true)
     try {
@@ -190,7 +212,6 @@ const ProyectPage = () => {
   const fetchUserProjects = async () => {
     if (!userId) return;
     try {
-      setLoading(true);
       const response = await axios.get(`http://localhost:8000/api/users-projects/user/${userId}`, {
         headers: { Authorization: `Bearer ${accessToken}` }
       });
@@ -198,35 +219,6 @@ const ProyectPage = () => {
       setUserProjects(projectsOnly);
     } catch (error) {
       setUserProjects([]);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const handleCreateSkill = async (values: z.infer<typeof skillSchema>) => {
-    setLoading(true) // Activa pantalla de carga
-    try {
-      await axios.post('http://localhost:8000/api/skills', {
-        name: values.name,
-        description: values.description,
-        details: JSON.stringify({
-          "level": "N/A",
-          "category": "N/A"
-        })
-      })
-      fetchSkillsData();
-      setSuccess(true);
-      createSkillForm.reset();
-      
-      // CAMBIO: Cerramos el modal de skill automáticamente
-      setIsSkillOpen(false);
-
-      setTimeout(() => setSuccess(false), 3000);
-    } catch (error) {
-      setErrorAlert(true);
-      setTimeout(() => setErrorAlert(false), 3000);
-    } finally {
-      setLoading(false) // Desactiva pantalla de carga SIEMPRE
     }
   }
 
@@ -236,7 +228,6 @@ const ProyectPage = () => {
         headers: { Authorization: `Bearer ${accessToken}` }
       })
       setSkills(resSkills.data.data)
-
       const resProjectSkills = await axios.get('http://localhost:8000/api/porjects-skills', {
         headers: { Authorization: `Bearer ${accessToken}` }
       })
@@ -247,102 +238,138 @@ const ProyectPage = () => {
   }
 
   useEffect(() => {
-    const fetchCareers = async () => {
+    const fetchData = async () => {
       try {
-        const res = await axios.get('http://localhost:8000/api/careers', {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        })
-        setCareers(res.data.data)
+        const [careersRes, rolesRes] = await Promise.all([
+          axios.get('http://localhost:8000/api/careers', { headers: { Authorization: `Bearer ${accessToken}` } }),
+          axios.get('http://localhost:8000/api/roles')
+        ])
+        setCareers(careersRes.data.data)
+        setRole(rolesRes.data.data)
       } catch (error) {
         console.log(error)
       }
     }
-
-    fetchCareers()
+    fetchData()
     fetchProjects()
     fetchSkillsData()
 
-    const fetchRole = async () => {
-      setLoading(true)
-      try {
-        const res = await axios.get('http://localhost:8000/api/roles')
-        setRole(res.data.data)
-      } catch (error) {
-        console.log(error)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchRole()
-
     const fetchUser = async () => {
+      if (!userId) return
       try {
-        setLoading(true)
         const response = await axios.get(`http://localhost:8000/api/users/${userId}`, {
           headers: { Authorization: `Bearer ${accessToken}` }
         })
         setUser(response.data)
       } catch (error) {
         console.error(error)
-      } finally {
-        setLoading(false)
       }
     }
     fetchUser()
     fetchUserProjects()
   }, [])
 
+  // --- COMPUTED VALUES ---
+  const roleName = user ? role.find(r => r.id === user.roleId)?.name : "";
+
   const getProjectSkillsDisplay = (projectId: string) => {
     const relations = projectSkills.filter(ps => ps.projectId === projectId);
     return relations.map(rel => skills.find(s => s.id === rel.skillId)).filter(Boolean) as Skill[];
   }
 
-  const toggleSkillSelection = (skillId: string) => {
-    setSelectedSkills(prev =>
-      prev.includes(skillId) ? prev.filter(id => id !== skillId) : [...prev, skillId]
-    );
+  const formatDate = (dateString?: string | null) => {
+    if (!dateString) return "Pendiente";
+    return new Date(dateString).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });
   }
 
-  const loadProjectData = (project: Project) => {
-    setEditingProject(project)
-    const existingSkillIds = projectSkills
-      .filter(ps => ps.projectId === project.id)
-      .map(ps => ps.skillId);
-    setSelectedSkills(existingSkillIds);
+  // --- HANDLERS ---
 
-    editProjectForm.reset({
-      name: project.name,
-      description: project.description,
-      summary: project.summary || "",
-      deliverables: project.deliverables?.join("\n") || "",
-      cycle: project.cycle,
-      academic_period: project.academic_period,
-      startDate: project.startDate ? project.startDate.split('T')[0] : "",
-      endDate: project.endDate ? project.endDate.split('T')[0] : "",
-      careerId: project.careerId,
-      objectives: project.objectives?.join("\n") || "",
-      status: project.status
-    })
-    setIsEditOpen(true)
-  };
-
-  const handleDeleteProyect = async (e: React.MouseEvent, id: string) => {
-    e.stopPropagation()
+  // 1. Crear Skill
+  const handleCreateSkill = async (values: z.infer<typeof skillSchema>) => {
+    setLoading(true)
     try {
-      setLoading(true)
-      await axios.delete(`http://localhost:8000/api/projects/${id}`)
-      setDeleteSuccess(true)
-      setTimeout(() => setDeleteSuccess(false), 3000)
-      await fetchProjects()
-      await fetchSkillsData()
+      await axios.post('http://localhost:8000/api/skills', {
+        name: values.name,
+        description: values.description,
+        details: JSON.stringify({ "level": "N/A", "category": "N/A" })
+      })
+      await fetchSkillsData();
+      setSuccess(true);
+      createSkillForm.reset();
+      setIsSkillOpen(false);
+      setTimeout(() => setSuccess(false), 3000);
     } catch (error) {
-      setErrorDelete(true)
-      setTimeout(() => setErrorDelete(false), 3000)
+      setErrorAlert(true);
+      setTimeout(() => setErrorAlert(false), 3000);
     } finally {
       setLoading(false)
     }
   }
 
+  // 2. Crear Proyecto (Lógica Stand-by)
+  const handleCreateProyect = async (values: z.infer<typeof projectSchema>) => {
+    try {
+      setLoading(true)
+      const objectivesArray = values.objectives.split("\n").map(l => l.trim()).filter(l => l.length > 0)
+      const deliverablesArray = values.deliverables ? values.deliverables.split("\n").map(l => l.trim()).filter(l => l.length > 0) : []
+
+      // Si es ADMIN usa el estado del form, si no, fuerza "pendiente"
+      const initialStatus = roleName === "ADMIN" ? (values.status || "en progreso") : "pendiente";
+
+      const res = await axios.post('http://localhost:8000/api/projects', {
+        ...values,
+        status: initialStatus,
+        objectives: objectivesArray,
+        deliverables: deliverablesArray,
+        startDate: new Date(values.startDate).toISOString(),
+        endDate: new Date(values.endDate).toISOString(),
+        createdBy: userId,
+      });
+
+      const projectId = res.data.id;
+      await axios.post('http://localhost:8000/api/users-projects', { userId, projectId });
+
+      if (selectedSkills.length > 0) {
+        await Promise.all(selectedSkills.map(skillId =>
+          axios.post('http://localhost:8000/api/porjects-skills', { projectId, skillId })
+        ));
+      }
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+      createProjectForm.reset();
+      setSelectedSkills([]);
+      setIsCreateOpen(false);
+      await fetchProjects();
+      await fetchUserProjects();
+      await fetchSkillsData();
+    } catch (error) {
+      setErrorAlert(true);
+      setTimeout(() => setErrorAlert(false), 3000);
+    } finally {
+      setLoading(false)
+    }
+  };
+
+  // 3. Aprobar Proyecto (Solo Admin)
+  const handleApproveProject = async (e: React.MouseEvent, project: Project) => {
+    e.stopPropagation();
+    setLoading(true);
+    try {
+      await axios.patch(`http://localhost:8000/api/projects/${project.id}`, {
+        status: "en progreso"
+      });
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+      await fetchProjects();
+    } catch (error) {
+      setErrorAlert(true);
+      setTimeout(() => setErrorAlert(false), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 4. Editar Proyecto
   const handleEditProyect = async (values: z.infer<typeof projectSchema>) => {
     if (!editingProject) return
     setLoading(true)
@@ -381,53 +408,54 @@ const ProyectPage = () => {
     }
   };
 
-  const handleCreateProyect = async (values: z.infer<typeof projectSchema>) => {
+  // 5. Eliminar Proyecto
+  const handleDeleteProyect = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation()
     try {
       setLoading(true)
-      const objectivesArray = values.objectives.split("\n").map(l => l.trim()).filter(l => l.length > 0)
-      const deliverablesArray = values.deliverables ? values.deliverables.split("\n").map(l => l.trim()).filter(l => l.length > 0) : []
-
-      const res = await axios.post('http://localhost:8000/api/projects', {
-        ...values,
-        objectives: objectivesArray,
-        deliverables: deliverablesArray,
-        startDate: new Date(values.startDate).toISOString(),
-        endDate: new Date(values.endDate).toISOString(),
-        createdBy: userId,
-      });
-
-      const projectId = res.data.id;
-
-      await axios.post('http://localhost:8000/api/users-projects', { userId, projectId });
-
-      if (selectedSkills.length > 0) {
-        await Promise.all(selectedSkills.map(skillId =>
-          axios.post('http://localhost:8000/api/porjects-skills', { projectId, skillId })
-        ));
-      }
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
-      createProjectForm.reset();
-      setSelectedSkills([]);
-      setIsCreateOpen(false);
-      await fetchProjects();
-      await fetchUserProjects();
-      await fetchSkillsData();
+      await axios.delete(`http://localhost:8000/api/projects/${id}`)
+      setDeleteSuccess(true)
+      setTimeout(() => setDeleteSuccess(false), 3000)
+      await fetchProjects()
+      await fetchSkillsData()
     } catch (error) {
-      setErrorAlert(true);
-      setTimeout(() => setErrorAlert(false), 3000);
+      setErrorDelete(true)
+      setTimeout(() => setErrorDelete(false), 3000)
     } finally {
       setLoading(false)
     }
-  };
-
-  const roleName = user ? role.find(r => r.id === user.roleId)?.name : "";
-
-  const formatDate = (dateString?: string | null) => {
-    if (!dateString) return "Pendiente";
-    return new Date(dateString).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });
   }
 
+  const loadProjectData = (project: Project) => {
+    setEditingProject(project)
+    const existingSkillIds = projectSkills
+      .filter(ps => ps.projectId === project.id)
+      .map(ps => ps.skillId);
+    setSelectedSkills(existingSkillIds);
+
+    editProjectForm.reset({
+      name: project.name,
+      description: project.description,
+      summary: project.summary || "",
+      deliverables: project.deliverables?.join("\n") || "",
+      cycle: project.cycle,
+      academic_period: project.academic_period,
+      startDate: project.startDate ? project.startDate.split('T')[0] : "",
+      endDate: project.endDate ? project.endDate.split('T')[0] : "",
+      careerId: project.careerId,
+      objectives: project.objectives?.join("\n") || "",
+      status: project.status
+    })
+    setIsEditOpen(true)
+  };
+
+  const toggleSkillSelection = (skillId: string) => {
+    setSelectedSkills(prev =>
+      prev.includes(skillId) ? prev.filter(id => id !== skillId) : [...prev, skillId]
+    );
+  }
+
+  // --- RENDER HELPERS ---
   const renderFormFields = (form: any) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
       <FormField control={form.control} name="name" render={({ field }) => (
@@ -476,8 +504,6 @@ const ProyectPage = () => {
               <option>Mar 2026 - Ago 2026</option>
               <option>Sep 2026 - Feb 2027</option>
               <option>Mar 2027 - Ago 2027</option>
-              <option>Sep 2027 - Feb 2028</option>
-              <option>Mar 2028 - Ago 2028</option>
             </select>
           </FormControl>
           <FormMessage className="text-red-500 text-xs" />
@@ -509,6 +535,8 @@ const ProyectPage = () => {
           <FormMessage className="text-red-500 text-xs" />
         </FormItem>
       )} />
+      
+      {/* SKILLS SELECTOR */}
       <div className="md:col-span-2 bg-gray-900/50 p-4 rounded-lg border border-gray-700">
         <Label className="text-cyan-400 font-bold mb-3 block items-center gap-2">
           <Code2 className="w-4 h-4" /> Habilidades Requeridas
@@ -525,10 +553,7 @@ const ProyectPage = () => {
         </div>
         <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
           {skills
-            .filter(s => {
-              const term = skillSearch.toLowerCase()
-              return s.name.toLowerCase().includes(term)
-            })
+            .filter(s => s.name.toLowerCase().includes(skillSearch.toLowerCase()))
             .map((skill) => (
               <div key={skill.id}
                 className={`flex items-center space-x-2 p-2 rounded cursor-pointer border transition-colors ${selectedSkills.includes(skill.id) ? 'bg-cyan-900/40 border-cyan-500' : 'hover:bg-gray-800 border-transparent'}`}
@@ -542,6 +567,7 @@ const ProyectPage = () => {
         </div>
         <p className="text-xs text-gray-500 mt-2 text-right">{selectedSkills.length} seleccionadas</p>
       </div>
+
       <FormField control={form.control} name="objectives" render={({ field }) => (
         <FormItem className="md:col-span-2">
           <FormLabel className="text-gray-300">Objetivos (uno por línea)</FormLabel>
@@ -556,19 +582,24 @@ const ProyectPage = () => {
           <FormMessage className="text-red-500 text-xs" />
         </FormItem>
       )} />
-      <FormField control={form.control} name="status" render={({ field }) => (
-        <FormItem className="md:col-span-2">
-          <FormLabel className="text-gray-300">Estado del proyecto </FormLabel>
-          <FormControl>
-            <select className="w-full mt-1 p-2 rounded-md bg-gray-900 border border-gray-600 text-sm text-white" {...field}>
-              <option value="">Selecciona un estado...</option>
-              <option>en progreso</option>
-              <option>completado</option>
-            </select>
-          </FormControl>
-          <FormMessage className="text-red-500 text-xs" />
-        </FormItem>
-      )} />
+
+      {/* Selector de estado: Solo visible para ADMIN */}
+      {roleName === "ADMIN" && (
+        <FormField control={form.control} name="status" render={({ field }) => (
+          <FormItem className="md:col-span-2">
+            <FormLabel className="text-gray-300">Estado del proyecto</FormLabel>
+            <FormControl>
+              <select className="w-full mt-1 p-2 rounded-md bg-gray-900 border border-gray-600 text-sm text-white" {...field}>
+                <option value="">Selecciona un estado...</option>
+                <option value="pendiente">pendiente (Stand-by)</option>
+                <option value="en progreso">en progreso</option>
+                <option value="completado">completado</option>
+              </select>
+            </FormControl>
+            <FormMessage className="text-red-500 text-xs" />
+          </FormItem>
+        )} />
+      )}
     </div>
   )
 
@@ -576,6 +607,8 @@ const ProyectPage = () => {
     <div className="flex bg-gray-900 min-h-screen text-gray-100 font-sans">
       <Sidebar />
       <main className="flex-1 ml-0 md:ml-64 p-6 transition-all w-full overflow-x-hidden">
+        
+        {/* HEADER */}
         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-8 gap-6">
           <div className="flex-shrink-0">
             <h2 className="text-3xl font-bold text-white tracking-tight">Panel de Proyectos</h2>
@@ -595,6 +628,7 @@ const ProyectPage = () => {
                 />
               </div>
 
+              {/* DIALOGO CREAR PROYECTO */}
               <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                 <DialogTrigger asChild>
                   <Button className="bg-cyan-600 hover:bg-cyan-700 text-white font-semibold shadow-lg shadow-cyan-900/20 whitespace-nowrap" onClick={() => { createProjectForm.reset(); setSelectedSkills([]) }}>
@@ -618,6 +652,7 @@ const ProyectPage = () => {
               </Dialog>
             </div>
 
+            {/* FILTROS */}
             <div className="flex flex-col sm:flex-row gap-6 p-1">
               <div className="space-y-1">
                 <h5 className="text-xs font-semibold text-cyan-400/80 uppercase tracking-wide">Estado</h5>
@@ -628,8 +663,8 @@ const ProyectPage = () => {
                       onClick={() => setFilterStatus(status)}
                       variant={filterStatus === status ? "default" : "outline"}
                       className={`cursor-pointer px-3 py-1 transition-all ${filterStatus === status
-                          ? "bg-cyan-600 hover:bg-cyan-700 text-white border-cyan-600"
-                          : "text-gray-400 border-gray-600 hover:border-cyan-500 hover:text-cyan-400"
+                        ? "bg-cyan-600 hover:bg-cyan-700 text-white border-cyan-600"
+                        : "text-gray-400 border-gray-600 hover:border-cyan-500 hover:text-cyan-400"
                         }`}
                     >
                       {status}
@@ -647,8 +682,8 @@ const ProyectPage = () => {
                       onClick={() => setFilterStatusUserProjects(option)}
                       variant={filterStatusUserProjects === option ? "default" : "outline"}
                       className={`cursor-pointer px-3 py-1 transition-all ${filterStatusUserProjects === option
-                          ? "bg-purple-600 hover:bg-purple-700 text-white border-purple-600"
-                          : "text-gray-400 border-gray-600 hover:border-purple-500 hover:text-purple-400"
+                        ? "bg-purple-600 hover:bg-purple-700 text-white border-purple-600"
+                        : "text-gray-400 border-gray-600 hover:border-purple-500 hover:text-purple-400"
                         }`}
                     >
                       {option}
@@ -670,7 +705,7 @@ const ProyectPage = () => {
             <div className="bg-gray-800 rounded-xl border border-gray-700 shadow-xl overflow-hidden">
               <div className="p-4 border-b border-gray-700 bg-gray-900/30 flex justify-between items-center">
                 <h2 className="text-lg font-bold text-white">Directorio Completo de Proyectos</h2>
-                {/* DIÁLOGO CONTROLADO PARA CREAR SKILL */}
+                {/* DIÁLOGO CREAR SKILL */}
                 <Dialog open={isSkillOpen} onOpenChange={setIsSkillOpen}>
                   <DialogTrigger asChild>
                     <Button className="bg-green-600 hover:bg-green-700 text-white font-semibold flex items-center gap-2 text-sm">
@@ -734,60 +769,55 @@ const ProyectPage = () => {
                           hasSkill
                         );
                         const matchesStatus = filterStatus === "TODOS" || p.status === filterStatus;
-                        const isMyProject = userProjects.some(up => up.id === p.id) || p.createdBy === userId;
-
+                        
+                        const isOwner = p.createdBy === userId || userProjects.some(up => up.id === p.id);
                         const matchesUser = filterStatusUserProjects === "TODOS" ||
-                          (filterStatusUserProjects === "mis proyectos" && isMyProject);
+                          (filterStatusUserProjects === "mis proyectos" && isOwner);
+
+                        // --- FILTRO DE VISIBILIDAD ---
+                        const isAdmin = roleName === "ADMIN";
+                        // Si no es admin ni dueño, ocultar pendientes
+                        if (!isAdmin && !isOwner && p.status === "pendiente") return false;
+
                         return matchesSearch && matchesStatus && matchesUser;
                       }).map((p) => {
                         const careerName = careers.find((c) => c.id === p.careerId)?.name;
                         const isAdmin = roleName === "ADMIN";
-                        const isOwner = userProjects.some((up) => up.id === p.id);
+                        const isOwner = p.createdBy === userId || userProjects.some((up) => up.id === p.id);
                         const mySkills = getProjectSkillsDisplay(p.id);
+
                         return (
                           <TableRow
                             key={p.id}
-                            className="border-gray-700 hover:bg-gray-700/30 transition-colors group align-top cursor-pointer"
+                            className={`border-gray-700 transition-colors group align-top cursor-pointer ${p.status === 'pendiente' ? 'bg-yellow-900/10 hover:bg-yellow-900/20' : 'hover:bg-gray-700/30'}`}
                             onClick={() => { setViewProject(p); setIsViewOpen(true); }}
                           >
                             <TableCell className="py-4 align-top">
                               <div className="space-y-2">
-                                {/* NOMBRE DEL PROYECTO: UNA LÍNEA + TRUNCATE + ANCHO MÁXIMO */}
-                                <p 
-                                  className="text-white font-bold text-lg leading-tight truncate w-[375px]" 
-                                  title={p.name}
-                                >
+                                <p className="text-white font-bold text-lg leading-tight truncate w-[375px]" title={p.name}>
                                   {p.name}
                                 </p>
                                 <div className="space-y-1 text-sm text-gray-400">
                                   <div className="flex items-center gap-2"><GraduationCap className="w-3 h-3" /> {careerName || "Sin Carrera"}</div>
                                   <div className="flex items-center gap-2"><BookOpen className="w-3 h-3" /> {p.cycle}</div>
                                   <div className="flex items-center gap-2"><CalendarIcon className="w-3 h-3" /> {p.academic_period}</div>
-                                  <div className="flex items-center gap-2">
-                                    <User2 className="w-3 h-3" />
-                                    {p.user?.name || "Desconocido"}
-                                  </div>
+                                  <div className="flex items-center gap-2"><User2 className="w-3 h-3" />{p.user?.name || "Desconocido"}</div>
                                 </div>
                               </div>
                             </TableCell>
+
                             <TableCell className="py-4 align-top">
                               <div className="space-y-3 w-[300px] whitespace-normal">
                                 <div>
                                   <span className="text-xs font-semibold text-gray-500 uppercase">Problemática</span>
-                                  <p className="text-sm text-gray-300 leading-relaxed break-words line-clamp-3">
-                                    {p.description}
-                                  </p>
+                                  <p className="text-sm text-gray-300 leading-relaxed break-words line-clamp-3">{p.description}</p>
                                 </div>
-
                                 {p.summary && (
                                   <div className="bg-gray-900/40 p-2 rounded border border-gray-700/50">
                                     <span className="text-xs font-semibold text-gray-500 uppercase block mb-1">Resumen</span>
-                                    <p className="text-xs text-gray-400 italic break-words line-clamp-2">
-                                      {p.summary}
-                                    </p>
+                                    <p className="text-xs text-gray-400 italic break-words line-clamp-2">{p.summary}</p>
                                   </div>
                                 )}
-
                                 {mySkills.length > 0 && (
                                   <div className="flex flex-wrap gap-1 mt-2">
                                     {mySkills.map(sk => (
@@ -804,62 +834,57 @@ const ProyectPage = () => {
                               {p.objectives && p.objectives.length > 0 ? (
                                 <ul className="list-disc pl-4 space-y-1 break-words">
                                   {p.objectives.slice(0, 3).map((obj, i) => (
-                                    <li key={i} className="text-sm text-gray-400 leading-snug line-clamp-2">
-                                      - {obj}
-                                    </li>
+                                    <li key={i} className="text-sm text-gray-400 leading-snug line-clamp-2">- {obj}</li>
                                   ))}
-                                  {p.objectives.length > 3 && (
-                                    <li className="text-xs text-cyan-500 italic">
-                                      ... y {p.objectives.length - 3} más
-                                    </li>
-                                  )}
+                                  {p.objectives.length > 3 && <li className="text-xs text-cyan-500 italic">... y {p.objectives.length - 3} más</li>}
                                 </ul>
-                              ) : (
-                                <span className="text-xs text-gray-600 italic">
-                                  Sin objetivos registrados
-                                </span>
-                              )}
+                              ) : <span className="text-xs text-gray-600 italic">Sin objetivos registrados</span>}
                             </TableCell>
 
                             <TableCell className="py-4 align-top max-w-[250px]">
                               {p.deliverables && p.deliverables.length > 0 ? (
                                 <ul className="list-disc pl-4 space-y-1 break-words">
                                   {p.deliverables.slice(0, 3).map((del, i) => (
-                                    <li key={i} className="text-sm text-gray-400 leading-snug line-clamp-2">
-                                      - {del}
-                                    </li>
+                                    <li key={i} className="text-sm text-gray-400 leading-snug line-clamp-2">- {del}</li>
                                   ))}
-                                  {p.deliverables.length > 3 && (
-                                    <li className="text-xs text-cyan-500 italic">
-                                      ... y {p.deliverables.length - 3} más
-                                    </li>
-                                  )}
+                                  {p.deliverables.length > 3 && <li className="text-xs text-cyan-500 italic">... y {p.deliverables.length - 3} más</li>}
                                 </ul>
-                              ) : (
-                                <span className="text-xs text-gray-600 italic">
-                                  Sin entregables
-                                </span>
-                              )}
+                              ) : <span className="text-xs text-gray-600 italic">Sin entregables</span>}
                             </TableCell>
 
                             <TableCell className="py-4 align-top">
                               <div className="space-y-3">
-                                <Badge variant="outline" className={`${p.status === 'Finalizado' ? 'text-green-400 border-green-900 bg-green-900/20' : 'text-cyan-400 border-cyan-900 bg-cyan-900/20'}`}>
-                                  {p.status || "N/A"}
-                                </Badge>
+                                {p.status === 'pendiente' ? (
+                                  <Badge variant="outline" className="text-yellow-400 border-yellow-700 bg-yellow-900/30 flex w-fit items-center gap-1">
+                                    <Clock className="w-3 h-3" /> Stand-by
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className={`${p.status === 'Finalizado' || p.status === 'completado' ? 'text-green-400 border-green-900 bg-green-900/20' : 'text-cyan-400 border-cyan-900 bg-cyan-900/20'}`}>
+                                    {p.status || "N/A"}
+                                  </Badge>
+                                )}
                                 <div className="text-xs text-gray-400">
                                   <div className="mb-1"><span className="text-gray-600">Inicio:</span> <br />{formatDate(p.startDate)}</div>
                                   <div><span className="text-gray-600">Fin:</span> <br />{formatDate(p.endDate)}</div>
                                 </div>
                               </div>
                             </TableCell>
+
                             <TableCell className="py-4 align-top text-right">
                               <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                                {/* BOTÓN APROBAR (Solo Admin en pendiente) */}
+                                {isAdmin && p.status === 'pendiente' && (
+                                  <Button size="icon" className="h-8 w-8 bg-green-600 hover:bg-green-700 text-white mr-2" title="Aprobar Proyecto" onClick={(e) => handleApproveProject(e, p)}>
+                                    <Check className="w-4 h-4" />
+                                  </Button>
+                                )}
+                                {/* BOTÓN EDITAR (Admin o Dueño) */}
                                 {(isAdmin || isOwner) && (
                                   <Button variant="ghost" size="icon" className="h-8 w-8 text-cyan-500 hover:text-cyan-400 hover:bg-cyan-900/20" onClick={() => loadProjectData(p)}>
                                     <Pencil className="w-4 h-4" />
                                   </Button>
                                 )}
+                                {/* BOTÓN ELIMINAR (Solo Admin) */}
                                 {isAdmin && (
                                   <Dialog>
                                     <DialogTrigger asChild>
@@ -884,21 +909,17 @@ const ProyectPage = () => {
                 </Table>
               </div>
             </div>
+
+            {/* ALERTS */}
             {success && <Alert className="fixed top-5 right-5 w-auto bg-green-600 border-green-500 text-white shadow-xl animate-in slide-in-from-right"><CheckCircle2Icon /><AlertTitle>Éxito</AlertTitle><AlertDescription>Operación realizada correctamente.</AlertDescription></Alert>}
             {errorAlert && <Alert className="fixed top-5 right-5 w-auto bg-red-600 border-red-500 text-white shadow-xl animate-in slide-in-from-right"><AlertCircleIcon /><AlertTitle>Error</AlertTitle><AlertDescription>Hubo un problema.</AlertDescription></Alert>}
             {deleteSuccess && <Alert className="fixed top-5 right-5 w-auto bg-green-600 border-green-500 text-white shadow-xl animate-in slide-in-from-right"><CheckCircle2Icon /><AlertTitle>Eliminado</AlertTitle><AlertDescription>El proyecto ha sido eliminado.</AlertDescription></Alert>}
-            
-            {errorDelete && (
-                <Alert className="fixed top-5 right-5 w-auto bg-red-600 border-red-500 text-white shadow-xl animate-in slide-in-from-right">
-                    <AlertCircleIcon />
-                    <AlertTitle>Error</AlertTitle>
-                    <AlertDescription>No se pudo eliminar el proyecto.</AlertDescription>
-                </Alert>
-            )}
+            {errorDelete && <Alert className="fixed top-5 right-5 w-auto bg-red-600 border-red-500 text-white shadow-xl animate-in slide-in-from-right"><AlertCircleIcon /><AlertTitle>Error</AlertTitle><AlertDescription>No se pudo eliminar el proyecto.</AlertDescription></Alert>}
           </div>
         )}
       </main>
 
+      {/* DIALOGO EDITAR */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto bg-gray-800 border-gray-700 text-white">
           <DialogHeader><DialogTitle className="text-xl font-bold text-cyan-400">Editar Proyecto</DialogTitle></DialogHeader>
@@ -914,6 +935,7 @@ const ProyectPage = () => {
         </DialogContent>
       </Dialog>
 
+      {/* DIALOGO VER DETALLES */}
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
         <DialogContent className="min-w-2xl w-full max-w-4xl bg-slate-900 border-slate-700 text-slate-100 p-0">
           <div className="max-h-[80vh] overflow-y-auto p-6 space-y-6 break-words break-all">
@@ -921,9 +943,7 @@ const ProyectPage = () => {
               <DialogTitle className="text-2xl font-bold text-cyan-400 flex items-center gap-2">
                 <FileText className="w-6 h-6" /> {viewProject?.name}
               </DialogTitle>
-              <DialogDescription className="text-slate-400">
-                Detalles completos del proyecto
-              </DialogDescription>
+              <DialogDescription className="text-slate-400">Detalles completos del proyecto</DialogDescription>
             </DialogHeader>
             {viewProject && (
               <div className="space-y-6">
@@ -938,9 +958,7 @@ const ProyectPage = () => {
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-cyan-500 uppercase mb-1">Fechas</h4>
-                    <p className="text-sm text-slate-300">
-                      {formatDate(viewProject.startDate)} al {formatDate(viewProject.endDate)}
-                    </p>
+                    <p className="text-sm text-slate-300">{formatDate(viewProject.startDate)} al {formatDate(viewProject.endDate)}</p>
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-cyan-500 uppercase mb-1">Estado</h4>
@@ -949,25 +967,19 @@ const ProyectPage = () => {
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-white mb-2 border-b border-slate-700 pb-1">Problemática</h3>
-                  <div className="text-slate-300 leading-relaxed whitespace-pre-wrap break-words bg-slate-950/30 p-3 rounded-md border border-slate-800 overflow-hidden">
-                    {viewProject.description}
-                  </div>
+                  <div className="text-slate-300 leading-relaxed whitespace-pre-wrap break-words bg-slate-950/30 p-3 rounded-md border border-slate-800 overflow-hidden">{viewProject.description}</div>
                 </div>
                 {viewProject.summary && (
                   <div>
                     <h3 className="text-lg font-semibold text-white mb-2 border-b border-slate-700 pb-1">Resumen Ejecutivo</h3>
-                    <div className="text-slate-300 leading-relaxed whitespace-pre-wrap break-words bg-slate-950/30 p-3 rounded-md border border-slate-800 overflow-hidden">
-                      {viewProject.summary}
-                    </div>
+                    <div className="text-slate-300 leading-relaxed whitespace-pre-wrap break-words bg-slate-950/30 p-3 rounded-md border border-slate-800 overflow-hidden">{viewProject.summary}</div>
                   </div>
                 )}
                 {viewProject.objectives?.length > 0 && (
                   <div>
                     <h3 className="text-lg font-semibold text-white mb-2 border-b border-slate-700 pb-1">Objetivos</h3>
                     <ul className="list-disc pl-5 space-y-2 text-slate-300 break-words">
-                      {viewProject.objectives.map((obj, i) => (
-                        <li key={i}>{obj}</li>
-                      ))}
+                      {viewProject.objectives.map((obj, i) => <li key={i}>{obj}</li>)}
                     </ul>
                   </div>
                 )}
@@ -975,9 +987,7 @@ const ProyectPage = () => {
                   <div>
                     <h3 className="text-lg font-semibold text-white mb-2 border-b border-slate-700 pb-1">Entregables</h3>
                     <ul className="list-disc pl-5 space-y-2 text-slate-300 break-words">
-                      {viewProject.deliverables.map((obj, i) => (
-                        <li key={i}>{obj}</li>
-                      ))}
+                      {viewProject.deliverables.map((obj, i) => <li key={i}>{obj}</li>)}
                     </ul>
                   </div>
                 )}
@@ -985,24 +995,19 @@ const ProyectPage = () => {
                   <h3 className="text-lg font-semibold text-white mb-2 border-b border-slate-700 pb-1">Tecnologías / Skills</h3>
                   <div className="flex flex-wrap gap-2">
                     {getProjectSkillsDisplay(viewProject.id).map(skill => (
-                      <Badge key={skill.id} className="bg-slate-700 hover:bg-slate-600 text-white">
-                        {skill.name}
-                      </Badge>
+                      <Badge key={skill.id} className="bg-slate-700 hover:bg-slate-600 text-white">{skill.name}</Badge>
                     ))}
                   </div>
                 </div>
-
               </div>
             )}
             <DialogFooter>
-              <Button onClick={() => setIsViewOpen(false)} className="bg-cyan-600 hover:bg-cyan-700 text-white">
-                Cerrar
-              </Button>
+              <Button onClick={() => setIsViewOpen(false)} className="bg-cyan-600 hover:bg-cyan-700 text-white">Cerrar</Button>
             </DialogFooter>
           </div>
         </DialogContent>
       </Dialog>
-      
+
       <LoadingOverlay isVisible={loading} message="Procesando..." />
 
     </div>
