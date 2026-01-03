@@ -757,7 +757,7 @@ const ProyectPage = () => {
                 <Dialog open={isSkillOpen} onOpenChange={setIsSkillOpen}>
                   <DialogTrigger asChild>
                     <Button className="bg-green-600 hover:bg-green-700 text-white font-semibold flex items-center gap-2 text-sm">
-                      <Plus className="w-4 h-4" /> Nueva Skill
+                      <Plus className="w-4 h-4" /> Nueva Habilidad 
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="bg-gray-800 border-gray-700 text-white">
