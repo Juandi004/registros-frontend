@@ -31,15 +31,21 @@ const UserProfile = () => {
   const [user, setUser] = useState<UserData | null>(null)
   const [careerName, setCareerName] = useState("Cargando...")
   const [roleName, setRoleName] = useState("Cargando...")
-  const [name, setName]=useState('')
+  
+  // Mantenemos el estado 'name' vacío para que el input no tenga texto real al inicio
+  const [name, setName] = useState('')
 
   const handleEditUser = async()=> {
+    // Si el usuario no escribió nada nuevo, no hacemos la petición
+    if (!name.trim()) return;
+
     try {
       setLoading(true)
       const req = await axios.patch(`http://localhost:8000/api/users/${userId}`, 
-        {name}
+        { name }
       )
       console.log('Usuario Editado', req.data)
+      setName('') // Limpiamos el estado después de editar con éxito
     } catch (error) {
       console.log('Error al editar el usuario, intente nuevamente', error)
     }
@@ -49,29 +55,33 @@ const UserProfile = () => {
     await loadProfile()
   }
 
-      const loadProfile = async () => {
-      setLoading(true)
-      try {
-        const headers = { Authorization: `Bearer ${accessToken}` }
-        const userRes = await axios.get(`http://localhost:8000/api/users/${userId}`, { headers })
-        const userData = userRes.data
-        setUser(userData)
-        const [careersRes, rolesRes] = await Promise.all([
-          axios.get("http://localhost:8000/api/careers", { headers }),
-          axios.get("http://localhost:8000/api/roles", { headers })
-        ])
-        const foundCareer = careersRes.data.data.find((c: Career) => c.id === userData.careerId)
-        const foundRole = rolesRes.data.data.find((r: Role) => r.id === userData.roleId)
+  const loadProfile = async () => {
+    setLoading(true)
+    try {
+      const headers = { Authorization: `Bearer ${accessToken}` }
+      const userRes = await axios.get(`http://localhost:8000/api/users/${userId}`, { headers })
+      const userData = userRes.data
+      setUser(userData)
+      
+      // IMPORTANTE: Ya no llamamos a setName(userData.name) aquí. 
+      // Así el input se mantiene vacío al abrir el modal.
 
-        setCareerName(foundCareer ? foundCareer.name : "Sin asignar")
-        setRoleName(foundRole ? foundRole.name : "Usuario")
+      const [careersRes, rolesRes] = await Promise.all([
+        axios.get("http://localhost:8000/api/careers", { headers }),
+        axios.get("http://localhost:8000/api/roles", { headers })
+      ])
+      const foundCareer = careersRes.data.data.find((c: Career) => c.id === userData.careerId)
+      const foundRole = rolesRes.data.data.find((r: Role) => r.id === userData.roleId)
 
-      } catch (error) {
-        console.error("Error cargando perfil:", error)
-      } finally {
-        setLoading(false)
-      }
+      setCareerName(foundCareer ? foundCareer.name : "Sin asignar")
+      setRoleName(foundRole ? foundRole.name : "Usuario")
+
+    } catch (error) {
+      console.error("Error cargando perfil:", error)
+    } finally {
+      setLoading(false)
     }
+  }
 
   useEffect(() => {
     if (!accessToken || !userId) {
@@ -103,10 +113,10 @@ const UserProfile = () => {
                 />
               </div>
               <div className="flex flex-row justify-around">  
-              <div>
-              <h2 className="text-2xl font-bold text-white px-3 justify-self-center">{user?.name}</h2>
-              </div>
-              <div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white px-3 justify-self-center">{user?.name}</h2>
+                </div>
+                <div>
                   <Dialog>
                     <DialogTrigger asChild>
                       <Button className="hover:bg-gray-700">
@@ -116,10 +126,19 @@ const UserProfile = () => {
                     <DialogContent className="bg-gray-800 border-gray-700 text-white">
                       <DialogHeader><DialogTitle>Editar Nombre de usuario</DialogTitle></DialogHeader>
                       <div className="space-y-3 py-4">
-                          <div>
-                              <Label>Nombre</Label>
-                              <Input onChange={(e)=>setName(e.target.value)} placeholder="Juan Pérez" className="bg-gray-900 border-gray-600 mt-1" value={name}/>
-                          </div>
+                        <div>
+                          <Label>Nombre</Label>
+                          {/* AJUSTE: 
+                              1. value={name} asegura que empiece vacío si el estado es ''.
+                              2. placeholder={user?.name} pone el nombre actual en gris en el fondo.
+                          */}
+                          <Input 
+                            onChange={(e) => setName(e.target.value)} 
+                            placeholder={user?.name || "Escribe el nuevo nombre"} 
+                            className="bg-gray-900 border-gray-600 mt-1 placeholder:text-gray-500" 
+                            value={name}
+                          />
+                        </div>
                       </div>
                       <DialogFooter>
                         <DialogClose asChild><Button variant="ghost" className="hover:bg-gray-700">Cancelar</Button></DialogClose>

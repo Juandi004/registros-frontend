@@ -187,11 +187,9 @@ const Dashboard = () => {
     <div className="flex min-h-screen bg-gray-950 text-gray-100 font-sans">
       <Sidebar />
       
-      {/* CAMBIO AQUÍ: Eliminado 'p-8' para quitar el espacio interno marcado */}
       <main className="flex-1 ml-0 md:ml-64 p-0 transition-all">
         
-        {/* Agregado un div contenedor con menos padding si deseas separar un poco, o déjalo sin nada */}
-        <div className="p-4 md:p-6 space-y-6"> {/* Espacio interno controlado */}
+        <div className="p-4 md:p-6 space-y-6">
           
           <header className="flex justify-between items-center">
             <div>
@@ -211,149 +209,185 @@ const Dashboard = () => {
           ) : (
             <div className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {statCards.map((stat, index) => (
-                  <Card key={index} className="bg-gray-900 border-gray-800 shadow-lg hover:border-gray-700 transition-all relative">
-                    <Dialog>
-                      {stat.key !== 'projects' ? (
+                
+                {statCards.map((stat, index) => {
+                  
+                  // CASO 1: TARJETA DE PROYECTOS (FUNCIONALIDAD MIXTA)
+                  if (stat.key === 'projects') {
+                    return (
+                      <Dialog key={index}>
+                        <Card className="bg-gray-900 border-gray-800 shadow-lg hover:border-gray-700 transition-all relative">
+                          <CardContent className="p-6">
+                            
+                            <div className="flex justify-between items-start">
+                              <div 
+                                className="cursor-pointer group/nav"
+                                onClick={() => navigate("/projects")}
+                                title="Ir a la página de proyectos"
+                              >
+                                <p className="text-sm font-medium text-gray-400 group-hover/nav:text-cyan-400 transition-colors">
+                                  {stat.label}
+                                </p>
+                                <h3 className="text-3xl font-bold text-white mt-2 group-hover/nav:text-cyan-400 transition-colors">
+                                  {stat.value}
+                                </h3>
+                              </div>
+
+                              <DialogTrigger asChild>
+                                <div className={`p-3 rounded-xl ${stat.bg} cursor-pointer hover:opacity-80 transition-opacity`} title="Ver lista rápida">
+                                  <stat.icon className={`w-6 h-6 ${stat.color}`} />
+                                </div>
+                              </DialogTrigger>
+                            </div>
+
+                            <div className="mt-4 flex items-center justify-between">
+                              <div className="flex items-center text-xs text-gray-500">
+                                <span className="flex items-center gap-1">
+                                  <CheckCircle2 className="w-3 h-3 text-green-500" /> 
+                                  {stat.desc}
+                                </span>
+                              </div>
+                              
+                              <DialogTrigger asChild>
+                                <div className="h-6 flex items-center text-xs text-cyan-400 hover:text-cyan-300 font-medium px-2 cursor-pointer transition-colors">
+                                  <Eye className="w-3 h-3 mr-1" /> Ver lista
+                                </div>
+                              </DialogTrigger>
+                            </div>
+
+                          </CardContent>
+                        </Card>
+
+                        <DialogContent className="bg-gray-900 border-gray-800 text-white max-h-[80vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle className="text-xl flex items-center gap-2">
+                              <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                              Lista de {stat.label}
+                            </DialogTitle>
+                            <DialogDescription className="text-gray-400">
+                              Vista rápida de títulos registrados.
+                            </DialogDescription>
+                          </DialogHeader>
+                          
+                          {renderDialogContent(stat.key)}
+
+                          <DialogFooter>
+                              <DialogClose asChild>
+                                <Button type="button" variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800 cursor-pointer">
+                                  Cerrar
+                                </Button>
+                              </DialogClose>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    )
+                  }
+
+                  // CASO 2: OTRAS TARJETAS (Modal normal)
+                  return (
+                    <Card key={index} className="bg-gray-900 border-gray-800 shadow-lg hover:border-gray-700 transition-all relative">
+                      <Dialog>
                         <DialogTrigger asChild>
                           <CardContent className="p-6 cursor-pointer group">
                             <div className="flex justify-between items-start">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-400 group-hover:text-cyan-400 transition-colors">{stat.label}</p>
-                                  <h3 className="text-3xl font-bold text-white mt-2 group-hover:text-cyan-400 transition-colors">{stat.value}</h3>
-                                </div>
-                                <div className={`p-3 rounded-xl ${stat.bg} group-hover:opacity-80 transition-opacity`}>
-                                  <stat.icon className={`w-6 h-6 ${stat.color}`} />
-                                </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-400 group-hover:text-cyan-400 transition-colors">{stat.label}</p>
+                                <h3 className="text-3xl font-bold text-white mt-2 group-hover:text-cyan-400 transition-colors">{stat.value}</h3>
                               </div>
-                              <div className="mt-4 flex items-center justify-between">
-                                <div className="flex items-center text-xs text-gray-500">
-                                  <span className="flex items-center gap-1">
-                                    <CheckCircle2 className="w-3 h-3 text-green-500" /> 
-                                    {stat.desc}
-                                  </span>
-                                </div>
-                                <div className="h-6 flex items-center text-xs text-cyan-400 group-hover:text-cyan-300 font-medium px-2">
-                                  <Eye className="w-3 h-3 mr-1" /> Ver lista
-                                </div>
-                              </div>
-                          </CardContent>
-                        </DialogTrigger>
-                      ) : (
-                        <CardContent className="p-6">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p 
-                                className="text-sm font-medium text-gray-400 hover:text-cyan-400 transition-colors cursor-pointer"
-                                onClick={() => navigate("/projects")}
-                              >
-                                {stat.label}
-                              </p>
-                              <h3 
-                                className="text-3xl font-bold text-white mt-2 cursor-pointer hover:text-cyan-400 transition-colors"
-                                onClick={() => navigate("/projects")}
-                              >
-                                {stat.value}
-                              </h3>
-                            </div>
-                            
-                            <DialogTrigger asChild>
-                              <div className={`p-3 rounded-xl ${stat.bg} cursor-pointer hover:opacity-80 transition-opacity`}>
+                              <div className={`p-3 rounded-xl ${stat.bg} group-hover:opacity-80 transition-opacity`}>
                                 <stat.icon className={`w-6 h-6 ${stat.color}`} />
                               </div>
-                            </DialogTrigger>
-                          </div>
-
-                          <div className="mt-4 flex items-center justify-between">
-                            <div className="flex items-center text-xs text-gray-500">
-                              <span className="flex items-center gap-1">
-                                <CheckCircle2 className="w-3 h-3 text-green-500" /> 
-                                {stat.desc}
-                              </span>
                             </div>
-
-                            <DialogTrigger asChild>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-6 text-xs text-cyan-400 hover:text-cyan-300 hover:bg-cyan-950 p-0 px-2 cursor-pointer"
-                              >
+                            <div className="mt-4 flex items-center justify-between">
+                              <div className="flex items-center text-xs text-gray-500">
+                                <span className="flex items-center gap-1">
+                                  <CheckCircle2 className="w-3 h-3 text-green-500" /> 
+                                  {stat.desc}
+                                </span>
+                              </div>
+                              <div className="h-6 flex items-center text-xs text-cyan-400 group-hover:text-cyan-300 font-medium px-2">
                                 <Eye className="w-3 h-3 mr-1" /> Ver lista
-                              </Button>
-                            </DialogTrigger>
-                          </div>
-                        </CardContent>
-                      )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </DialogTrigger>
 
-                      <DialogContent className="bg-gray-900 border-gray-800 text-white max-h-[80vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle className="text-xl flex items-center gap-2">
-                            <stat.icon className={`w-5 h-5 ${stat.color}`} />
-                            Lista de {stat.label}
-                          </DialogTitle>
-                          <DialogDescription className="text-gray-400">
-                            Listado completo registrado en el sistema.
-                          </DialogDescription>
-                        </DialogHeader>
-                        
-                        {renderDialogContent(stat.key)}
+                        <DialogContent className="bg-gray-900 border-gray-800 text-white max-h-[80vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle className="text-xl flex items-center gap-2">
+                              <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                              Lista de {stat.label}
+                            </DialogTitle>
+                            <DialogDescription className="text-gray-400">
+                              Listado completo registrado en el sistema.
+                            </DialogDescription>
+                          </DialogHeader>
+                          
+                          {renderDialogContent(stat.key)}
 
-                        <DialogFooter>
-                            <DialogClose asChild>
-                              <Button type="button" variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800 cursor-pointer">
-                                Cerrar
-                              </Button>
-                            </DialogClose>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  </Card>
-                ))}
+                          <DialogFooter>
+                              <DialogClose asChild>
+                                <Button type="button" variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800 cursor-pointer">
+                                  Cerrar
+                                </Button>
+                              </DialogClose>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </Card>
+                  )
+                })}
               </div>
 
+              {/* LISTA DE ÚLTIMOS PROYECTOS */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <Card className="col-span-1 lg:col-span-3 bg-gray-900 border-gray-800 shadow-lg hover:border-gray-700 transition-all p-0 overflow-hidden">
+                <div className="col-span-1 lg:col-span-3 bg-gray-900 border border-gray-800 rounded-lg shadow-lg hover:border-gray-700 transition-all overflow-hidden">
                   
-                  <Button 
-                      variant="ghost" 
-                      className="w-full h-auto rounded-none flex items-center justify-between p-4 border-b border-gray-800 hover:bg-gray-800/50 group" 
-                      onClick={() => navigate("/projects")}
+                  {/* AQUÍ ESTÁ EL TÍTULO NUEVO QUE FUNCIONA COMO BOTÓN */}
+                  <div 
+                    className="p-4 border-b border-gray-800 flex justify-between items-center cursor-pointer hover:bg-gray-800/50 transition-colors group"
+                    onClick={() => navigate("/projects")}
+                    title="Ir a todos los proyectos"
                   >
-                      <div className="flex items-center gap-3">
-                        <Clock className="w-5 h-5 text-cyan-500 group-hover:text-cyan-400 transition-colors"/>
-                        <span className="text-lg font-bold text-white group-hover:text-cyan-400 transition-colors">
-                          Últimos Proyectos
-                        </span>
-                      </div>
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-5 h-5 text-cyan-500 group-hover:text-cyan-400 transition-colors"/>
+                      <h3 className="text-lg font-bold text-white group-hover:text-cyan-400 transition-colors">
+                        Últimos Proyectos
+                      </h3>
+                    </div>
+                    
+                    <div className="flex items-center text-xs text-gray-500 group-hover:text-cyan-400 transition-colors gap-1">
+                       Ver todo <ArrowRight className="w-4 h-4" />
+                    </div>
+                  </div>
 
-                      <div className="flex items-center text-xs font-normal text-gray-500 group-hover:text-cyan-400 transition-colors gap-1">
-                        Ver todo <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1"/>
-                      </div>
-                  </Button>
-
-                  <CardContent className="p-0">
+                  <div className="divide-y divide-gray-800">
                     {recentProjects.length > 0 ? (
-                      <div className="flex flex-col">
-                        
+                      <>
                         {recentProjects.map((proj) => (
                           <Dialog key={proj.id}>
                             <DialogTrigger asChild>
-                              <div className="p-4 border-b border-gray-800 hover:bg-gray-800/50 transition-colors flex justify-between items-center cursor-pointer group/item">
-                                <div>
-                                  <h5 className="font-semibold text-gray-200 line-clamp-1 group-hover/item:text-cyan-400 transition-colors">
+                              <div className="p-4 hover:bg-gray-800/50 transition-colors flex justify-between items-center cursor-pointer group/item">
+                                
+                                <div className="flex-1 min-w-0 mr-4">
+                                  <h5 className="font-semibold text-gray-200 truncate group-hover/item:text-cyan-400 transition-colors" title={proj.name}>
                                     {proj.name}
                                   </h5>
-                                  <span className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                                  <div className="text-xs text-gray-500 flex items-center gap-1 mt-1 truncate">
                                     {proj.startDate ? (
                                       <>
-                                        <Calendar className="w-3 h-3"/> {new Date(proj.startDate).toLocaleDateString()}
+                                        <Calendar className="w-3 h-3 shrink-0"/> 
+                                        <span className="truncate">{new Date(proj.startDate).toLocaleDateString()}</span>
                                       </>
                                     ) : 'Sin fecha'}
-                                    <span className="mx-1">•</span> 
-                                    {proj.careerId ? 'Carrera asignada' : 'Sin carrera'}
-                                  </span>
+                                    <span className="mx-1 shrink-0">•</span> 
+                                    <span className="truncate">
+                                      {proj.careerId ? 'Carrera asignada' : 'Sin carrera'}
+                                    </span>
+                                  </div>
                                 </div>
-                                <Badge variant="outline" className={`text-xs ${proj.status === 'Finalizado' ? 'text-green-400 border-green-800' : 'text-cyan-400 border-cyan-800'}`}>
+
+                                <Badge variant="outline" className={`shrink-0 text-xs ${proj.status === 'Finalizado' ? 'text-green-400 border-green-800' : 'text-cyan-400 border-cyan-800'}`}>
                                   {proj.status || 'Activo'}
                                 </Badge>
                               </div>
@@ -370,7 +404,7 @@ const Dashboard = () => {
                               <div className="space-y-4 py-4">
                                 <div>
                                   <h4 className="text-sm font-medium text-gray-400">Nombre del Proyecto</h4>
-                                  <p className="text-lg font-semibold text-white">{proj.name}</p>
+                                  <p className="text-lg font-semibold text-white break-words">{proj.name}</p>
                                 </div>
                                 <div>
                                   <h4 className="text-sm font-medium text-gray-400">Descripción</h4>
@@ -416,18 +450,17 @@ const Dashboard = () => {
                             className="w-full text-sm text-gray-400 hover:text-white hover:bg-gray-800 cursor-pointer" 
                             onClick={() => navigate("/projects")}
                           >
-                            Ver todos <ArrowRight className="w-4 h-4 ml-2"/>
+                            Ver todos los proyectos <ArrowRight className="w-4 h-4 ml-2"/>
                           </Button>
                         </div>
-
-                      </div>
+                      </>
                     ) : (
                       <div className="p-8 text-center text-gray-500 text-sm">
                         No hay actividad reciente.
                       </div>
                     )}
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </div>
             </div>
           )}
