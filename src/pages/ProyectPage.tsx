@@ -155,11 +155,14 @@ const ProyectPage = () => {
 
   const [search, setSearch] = useState("")
   const [skillSearch, setSkillSearch] = useState("")
-  const [filterStatus, setFilterStatus] = useState("TODOS");
-  const [filterStatusUserProjects, setFilterStatusUserProjects] = useState("TODOS")
   
-  const statusOptions = ["TODOS", "pendiente", "en progreso", "completado"];
-  const statusUserProjects = ["TODOS", "mis proyectos"]
+  // CAMBIO: Valores iniciales actualizados a "Todo"
+  const [filterStatus, setFilterStatus] = useState("Todo");
+  const [filterStatusUserProjects, setFilterStatusUserProjects] = useState("Todo")
+  
+  // CAMBIO: Opciones de filtro actualizadas según requerimiento (sin pendiente, con capitalización)
+  const statusOptions = ["Todo", "en progreso", "completado"];
+  const statusUserProjects = ["Todo", "Mis proyectos"]
 
   const [viewProject, setViewProject] = useState<Project | null>(null)
   const [isViewOpen, setIsViewOpen] = useState(false)
@@ -307,14 +310,18 @@ const ProyectPage = () => {
   const handleCreateProyect = async (values: z.infer<typeof projectSchema>) => {
     try {
       setLoading(true)
-      const objectivesArray = values.objectives.split("\n").map(l => l.trim()).filter(l => l.length > 0)
       
-      let deliverablesArray = values.deliverables ? values.deliverables.split("\n").map(l => l.trim()).filter(l => l.length > 0) : []
+      const objectivesArray = values.objectives.split("\n")
+        .filter(l => l.trim().length > 0)
+      
+      let deliverablesArray = values.deliverables ? values.deliverables.split("\n")
+        .filter(l => l.trim().length > 0) : []
+        
       if (values.link && values.link.trim() !== "") {
         deliverablesArray.push(values.link.trim());
       }
 
-      const initialStatus = roleName === "ADMIN" ? (values.status || "en progreso") : "pendiente";
+      const initialStatus = values.status || "en progreso";
 
       const res = await axios.post('http://localhost:8000/api/projects', {
         name: values.name,
@@ -381,9 +388,12 @@ const ProyectPage = () => {
     if (!editingProject) return
     setLoading(true)
     try {
-      const objectivesArray = values.objectives.split("\n").map(l => l.trim()).filter(l => l.length > 0)
+      const objectivesArray = values.objectives.split("\n")
+        .filter(l => l.trim().length > 0)
       
-      let deliverablesArray = values.deliverables ? values.deliverables.split("\n").map(l => l.trim()).filter(l => l.length > 0) : []
+      let deliverablesArray = values.deliverables ? values.deliverables.split("\n")
+        .filter(l => l.trim().length > 0) : []
+
       if (values.link && values.link.trim() !== "") {
         deliverablesArray.push(values.link.trim());
       }
@@ -473,6 +483,11 @@ const ProyectPage = () => {
     );
   }
 
+  const capitalizeFirst = (str: string) => {
+    if (!str) return "";
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  }
+
   const renderFormFields = (form: any) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
       <FormField control={form.control} name="name" render={({ field }) => (
@@ -491,7 +506,7 @@ const ProyectPage = () => {
       )} />
       <FormField control={form.control} name="summary" render={({ field }) => (
         <FormItem className="md:col-span-2">
-          <FormLabel className="text-gray-300">Resumen Ejecutivo</FormLabel>
+          <FormLabel className="text-gray-300">Resumen </FormLabel>
           <FormControl><Textarea className="bg-gray-900 border-gray-600 mt-1" {...field} /></FormControl>
           <FormMessage className="text-red-500 text-xs" />
         </FormItem>
@@ -586,15 +601,15 @@ const ProyectPage = () => {
 
       <FormField control={form.control} name="objectives" render={({ field }) => (
         <FormItem className="md:col-span-2">
-          <FormLabel className="text-gray-300">Objetivos (uno por línea)</FormLabel>
-          <FormControl><Textarea className="bg-gray-900 border-gray-600 mt-1 h-32" placeholder="- Objetivo 1&#10;- Objetivo 2" {...field} /></FormControl>
+          <FormLabel className="text-gray-300">Objetivos </FormLabel>
+          <FormControl><Textarea className="bg-gray-900 border-gray-600 mt-1 h-32" placeholder="- Objetivo 1&#10;" {...field} /></FormControl>
           <FormMessage className="text-red-500 text-xs" />
         </FormItem>
       )} />
       <FormField control={form.control} name="deliverables" render={({ field }) => (
         <FormItem className="md:col-span-2">
           <FormLabel className="text-gray-300">Entregables (Texto)</FormLabel>
-          <FormControl><Textarea className="bg-gray-900 border-gray-600 mt-1 h-32" placeholder="- Entregable 1&#10;- Entregable 2" {...field} /></FormControl>
+          <FormControl><Textarea className="bg-gray-900 border-gray-600 mt-1 h-32" placeholder="- Entregable 1&#10;" {...field} /></FormControl>
           <FormMessage className="text-red-500 text-xs" />
         </FormItem>
       )} />
@@ -606,22 +621,20 @@ const ProyectPage = () => {
         </FormItem>
       )} />
 
-      {roleName === "ADMIN" && (
-        <FormField control={form.control} name="status" render={({ field }) => (
-          <FormItem className="md:col-span-2">
-            <FormLabel className="text-gray-300">Estado del proyecto</FormLabel>
-            <FormControl>
-              <select className="w-full mt-1 p-2 rounded-md bg-gray-900 border border-gray-600 text-sm text-white" {...field}>
-                <option value="">Selecciona un estado...</option>
-                <option value="pendiente">pendiente (Stand-by)</option>
-                <option value="en progreso">en progreso</option>
-                <option value="completado">completado</option>
-              </select>
-            </FormControl>
-            <FormMessage className="text-red-500 text-xs" />
-          </FormItem>
-        )} />
-      )}
+      <FormField control={form.control} name="status" render={({ field }) => (
+        <FormItem className="md:col-span-2">
+          <FormLabel className="text-gray-300">Estado del proyecto</FormLabel>
+          <FormControl>
+            <select className="w-full mt-1 p-2 rounded-md bg-gray-900 border border-gray-600 text-sm text-white" {...field}>
+              <option value="">Selecciona un estado...</option>
+              <option value="en progreso">En progreso</option>
+              <option value="completado">Completado</option>
+            </select>
+          </FormControl>
+          <FormMessage className="text-red-500 text-xs" />
+        </FormItem>
+      )} />
+      
     </div>
   )
 
@@ -633,7 +646,7 @@ const ProyectPage = () => {
         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-8 gap-6">
           <div className="flex-shrink-0">
             <h2 className="text-3xl font-bold text-white tracking-tight">Panel de Proyectos</h2>
-            <p className="text-gray-400 text-sm mt-1">Gestión integral de proyectos PIENSA - ITS Sudamericano</p>
+            <p className="text-gray-400 text-sm mt-1">Gestión  de proyectos - Sudamericano</p>
           </div>
 
           <div className="flex flex-col w-full xl:w-auto gap-4">
@@ -686,7 +699,8 @@ const ProyectPage = () => {
                         : "text-gray-400 border-gray-600 hover:border-cyan-500 hover:text-cyan-400"
                         }`}
                     >
-                      {status}
+                      {/* CAMBIO: Se aplica Capitalización en la UI */}
+                      {capitalizeFirst(status)}
                     </Badge>
                   ))}
                 </div>
@@ -705,7 +719,8 @@ const ProyectPage = () => {
                         : "text-gray-400 border-gray-600 hover:border-purple-500 hover:text-purple-400"
                         }`}
                     >
-                      {option}
+                      {/* CAMBIO: Se aplica Capitalización en la UI */}
+                      {capitalizeFirst(option)}
                     </Badge>
                   ))}
                 </div>
@@ -763,8 +778,10 @@ const ProyectPage = () => {
                     <TableRow className="border-gray-700 hover:bg-gray-900/50">
                       <TableHead className="text-gray-300 font-bold min-w-[250px]">Proyecto</TableHead>
                       <TableHead className="text-gray-300 font-bold">Detalles & Skills</TableHead>
-                      <TableHead className="text-gray-300 font-bold min-w-[150px]">Objetivos</TableHead>
-                      <TableHead className="text-gray-300 font-bold min-w-[150px]">Entregables</TableHead>
+                      {/* Ancho mínimo 250px */}
+                      <TableHead className="text-gray-300 font-bold min-w-[250px]">Objetivos</TableHead>
+                      {/* Ancho mínimo 250px */}
+                      <TableHead className="text-gray-300 font-bold min-w-[250px]">Entregables</TableHead>
                       <TableHead className="text-gray-300 font-bold min-w-[150px]">Fechas & Estado</TableHead>
                       <TableHead className="text-gray-300 font-bold text-right">Acciones</TableHead>
                     </TableRow>
@@ -786,11 +803,11 @@ const ProyectPage = () => {
                           (careerName && careerName.toLowerCase().includes(term)) ||
                           hasSkill
                         );
-                        const matchesStatus = filterStatus === "TODOS" || p.status === filterStatus;
+                        const matchesStatus = filterStatus === "Todo" || p.status === filterStatus;
                         
                         const isOwner = p.createdBy === userId || userProjects.some(up => up.id === p.id);
-                        const matchesUser = filterStatusUserProjects === "TODOS" ||
-                          (filterStatusUserProjects === "mis proyectos" && isOwner);
+                        const matchesUser = filterStatusUserProjects === "Todo" ||
+                          (filterStatusUserProjects === "Mis proyectos" && isOwner);
 
                         const isAdmin = roleName === "ADMIN";
                         if (!isAdmin && !isOwner && p.status === "pendiente") return false;
@@ -847,25 +864,49 @@ const ProyectPage = () => {
                               </div>
                             </TableCell>
 
-                            <TableCell className="py-4 align-top max-w-[250px]">
+                            {/* Ancho máximo 350px con inline styles para line-clamp */}
+                            <TableCell className="py-4 align-top max-w-[350px]">
                               {p.objectives && p.objectives.length > 0 ? (
-                                <ul className="list-disc pl-4 space-y-1 break-words">
+                                <div className="space-y-1">
                                   {p.objectives.slice(0, 3).map((obj, i) => (
-                                    <li key={i} className="text-sm text-gray-400 leading-snug line-clamp-2">- {obj}</li>
+                                    <div 
+                                      key={i} 
+                                      className="text-sm text-gray-400 leading-snug break-words whitespace-normal"
+                                      style={{
+                                        display: '-webkit-box',
+                                        WebkitLineClamp: 2,
+                                        WebkitBoxOrient: 'vertical',
+                                        overflow: 'hidden'
+                                      }}
+                                    >
+                                      {obj}
+                                    </div>
                                   ))}
-                                  {p.objectives.length > 3 && <li className="text-xs text-cyan-500 italic">... y {p.objectives.length - 3} más</li>}
-                                </ul>
+                                  {p.objectives.length > 3 && <div className="text-xs text-cyan-500 italic">... y {p.objectives.length - 3} más</div>}
+                                </div>
                               ) : <span className="text-xs text-gray-600 italic">Sin objetivos registrados</span>}
                             </TableCell>
 
-                            <TableCell className="py-4 align-top max-w-[250px]">
+                            {/* Ancho máximo 350px con inline styles para line-clamp */}
+                            <TableCell className="py-4 align-top max-w-[350px]">
                               {textItems && textItems.length > 0 ? (
-                                <ul className="list-disc pl-4 space-y-1 break-words">
+                                <div className="space-y-1">
                                   {textItems.slice(0, 3).map((del, i) => (
-                                    <li key={i} className="text-sm text-gray-400 leading-snug line-clamp-2">- {del}</li>
+                                    <div 
+                                      key={i} 
+                                      className="text-sm text-gray-400 leading-snug break-words whitespace-normal"
+                                      style={{
+                                        display: '-webkit-box',
+                                        WebkitLineClamp: 2,
+                                        WebkitBoxOrient: 'vertical',
+                                        overflow: 'hidden'
+                                      }}
+                                    >
+                                      {del}
+                                    </div>
                                   ))}
-                                  {textItems.length > 3 && <li className="text-xs text-cyan-500 italic">... y {textItems.length - 3} más</li>}
-                                </ul>
+                                  {textItems.length > 3 && <div className="text-xs text-cyan-500 italic">... y {textItems.length - 3} más</div>}
+                                </div>
                               ) : <span className="text-xs text-gray-600 italic">Sin entregables</span>}
                               
                               {link && (
@@ -885,7 +926,8 @@ const ProyectPage = () => {
                                   </Badge>
                                 ) : (
                                   <Badge variant="outline" className={`${p.status === 'Finalizado' || p.status === 'completado' ? 'text-green-400 border-green-900 bg-green-900/20' : 'text-cyan-400 border-cyan-900 bg-cyan-900/20'}`}>
-                                    {p.status || "N/A"}
+                                    {/* CAMBIO: Capitalizar el estado visible en la tabla */}
+                                    {capitalizeFirst(p.status) || "N/A"}
                                   </Badge>
                                 )}
                                 <div className="text-xs text-gray-400">
@@ -997,9 +1039,9 @@ const ProyectPage = () => {
                 {viewProject.objectives?.length > 0 && (
                   <div>
                     <h3 className="text-lg font-semibold text-white mb-2 border-b border-slate-700 pb-1">Objetivos</h3>
-                    <ul className="list-disc pl-5 space-y-2 text-slate-300 break-words">
-                      {viewProject.objectives.map((obj, i) => <li key={i}>{obj}</li>)}
-                    </ul>
+                    <div className="pl-5 space-y-2 text-slate-300 break-words">
+                      {viewProject.objectives.map((obj, i) => <div key={i}>{obj}</div>)}
+                    </div>
                   </div>
                 )}
                 {viewProject.deliverables?.length > 0 && (() => {
@@ -1008,9 +1050,9 @@ const ProyectPage = () => {
                     <div>
                       <h3 className="text-lg font-semibold text-white mb-2 border-b border-slate-700 pb-1">Entregables</h3>
                       {textItems.length > 0 ? (
-                        <ul className="list-disc pl-5 space-y-2 text-slate-300 break-words">
-                          {textItems.map((obj, i) => <li key={i}>{obj}</li>)}
-                        </ul>
+                        <div className="pl-5 space-y-2 text-slate-300 break-words">
+                          {textItems.map((obj, i) => <div key={i}>{obj}</div>)}
+                        </div>
                       ) : (
                         <p className="text-sm text-slate-500 italic">Sin entregables de texto</p>
                       )}

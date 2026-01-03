@@ -114,7 +114,7 @@ const Dashboard = () => {
       icon: FolderGit2, 
       color: "text-cyan-500", 
       bg: "bg-cyan-500/10",
-      desc: "Proyectos PIENSA registrados"
+      desc: "Proyectos ya registrados"
     },
     { 
       key: "careers",
@@ -132,7 +132,7 @@ const Dashboard = () => {
       icon: Code2, 
       color: "text-emerald-500", 
       bg: "bg-emerald-500/10",
-      desc: "Tecnologías registradas"
+      desc: "Habilidades registradas"
     },
   ]
 
@@ -179,7 +179,7 @@ const Dashboard = () => {
         <header className="mb-8 flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-white tracking-tight">Panel de Control</h1>
-            <p className="text-gray-400 mt-1">Resumen general del sistema de gestión de proyectos.</p>
+            <p className="text-gray-400 mt-1">Sistema de gestión de proyectos</p>
           </div>
           <Button className="bg-cyan-600 hover:bg-cyan-700" onClick={() => navigate("/projects")}>
             Ver Todos los Proyectos

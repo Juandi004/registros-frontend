@@ -66,7 +66,7 @@ const Sidebar = () => {
       >
         <div className="flex items-center justify-center py-6 border-b border-gray-800 gap-3">
           <img src="https://cdn-icons-png.flaticon.com/512/4196/4196599.png" alt="icon" className="w-7 h-7 "/>
-          <h1 className="text-white font-bold text-xl">ThesisManager</h1>
+          <h1 className="text-white font-bold text-xl">RepoDigital ITS</h1>
         </div>
 
         {isLogged && user && (
@@ -78,7 +78,7 @@ const Sidebar = () => {
         )}
 
         <nav className="flex flex-col gap-1 p-3 mt-4">
-          <NavItem to="/dashboard" icon={<Home />} label="Dashboard" />
+          <NavItem to="/dashboard" icon={<Home />} label="Panel de Control" />
           <NavItem to="/profile" icon={<User />} label="Perfil" />
           <NavItem to="/projects" icon={<Settings />} label="Proyectos" />
 
