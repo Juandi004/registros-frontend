@@ -9,6 +9,9 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
+// NUEVO IMPORT:
+import { useParams, useNavigate } from "react-router-dom" 
+
 import { 
   Dialog, 
   DialogClose, 
@@ -133,6 +136,10 @@ type Role = {
 }
 
 const ProyectPage = () => {
+  // --- LEEMOS EL ID DE LA URL ---
+  const { id } = useParams() 
+  const navigate = useNavigate()
+
   const [projects, setProjects] = useState<Project[]>([])
   const [skills, setSkills] = useState<Skill[]>([])
   const [projectSkills, setProjectSkills] = useState<ProjectSkill[]>([])
@@ -156,11 +163,9 @@ const ProyectPage = () => {
   const [search, setSearch] = useState("")
   const [skillSearch, setSkillSearch] = useState("")
   
-  // CAMBIO: Valores iniciales actualizados a "Todo"
   const [filterStatus, setFilterStatus] = useState("Todo");
   const [filterStatusUserProjects, setFilterStatusUserProjects] = useState("Todo")
   
-  // CAMBIO: Opciones de filtro actualizadas según requerimiento (sin pendiente, con capitalización)
   const statusOptions = ["Todo", "en progreso", "completado"];
   const statusUserProjects = ["Todo", "Mis proyectos"]
 
@@ -267,6 +272,18 @@ const ProyectPage = () => {
     fetchUser()
     fetchUserProjects()
   }, [])
+
+  // --- EFECTO AUTOMÁTICO PARA ABRIR EL PROYECTO ---
+  useEffect(() => {
+    if (id && projects.length > 0) {
+      const found = projects.find(p => p.id === id);
+      if (found) {
+        setViewProject(found);
+        setIsViewOpen(true);
+      }
+    }
+  }, [id, projects]);
+  // -----------------------------------------------
 
   const roleName = user && role.length > 0 ? role.find(r => r.id === user.roleId)?.name : "";
 
@@ -699,7 +716,6 @@ const ProyectPage = () => {
                         : "text-gray-400 border-gray-600 hover:border-cyan-500 hover:text-cyan-400"
                         }`}
                     >
-                      {/* CAMBIO: Se aplica Capitalización en la UI */}
                       {capitalizeFirst(status)}
                     </Badge>
                   ))}
@@ -719,7 +735,6 @@ const ProyectPage = () => {
                         : "text-gray-400 border-gray-600 hover:border-purple-500 hover:text-purple-400"
                         }`}
                     >
-                      {/* CAMBIO: Se aplica Capitalización en la UI */}
                       {capitalizeFirst(option)}
                     </Badge>
                   ))}
@@ -778,9 +793,7 @@ const ProyectPage = () => {
                     <TableRow className="border-gray-700 hover:bg-gray-900/50">
                       <TableHead className="text-gray-300 font-bold min-w-[250px]">Proyecto</TableHead>
                       <TableHead className="text-gray-300 font-bold">Detalles & Skills</TableHead>
-                      {/* Ancho mínimo 250px */}
                       <TableHead className="text-gray-300 font-bold min-w-[250px]">Objetivos</TableHead>
-                      {/* Ancho mínimo 250px */}
                       <TableHead className="text-gray-300 font-bold min-w-[250px]">Entregables</TableHead>
                       <TableHead className="text-gray-300 font-bold min-w-[150px]">Fechas & Estado</TableHead>
                       <TableHead className="text-gray-300 font-bold text-right">Acciones</TableHead>
@@ -864,7 +877,6 @@ const ProyectPage = () => {
                               </div>
                             </TableCell>
 
-                            {/* Ancho máximo 350px con inline styles para line-clamp */}
                             <TableCell className="py-4 align-top max-w-[350px]">
                               {p.objectives && p.objectives.length > 0 ? (
                                 <div className="space-y-1">
@@ -887,7 +899,6 @@ const ProyectPage = () => {
                               ) : <span className="text-xs text-gray-600 italic">Sin objetivos registrados</span>}
                             </TableCell>
 
-                            {/* Ancho máximo 350px con inline styles para line-clamp */}
                             <TableCell className="py-4 align-top max-w-[350px]">
                               {textItems && textItems.length > 0 ? (
                                 <div className="space-y-1">
@@ -926,7 +937,6 @@ const ProyectPage = () => {
                                   </Badge>
                                 ) : (
                                   <Badge variant="outline" className={`${p.status === 'Finalizado' || p.status === 'completado' ? 'text-green-400 border-green-900 bg-green-900/20' : 'text-cyan-400 border-cyan-900 bg-cyan-900/20'}`}>
-                                    {/* CAMBIO: Capitalizar el estado visible en la tabla */}
                                     {capitalizeFirst(p.status) || "N/A"}
                                   </Badge>
                                 )}
@@ -997,7 +1007,17 @@ const ProyectPage = () => {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+      {/* --- MODAL DETALLE FINAL --- */}
+      {/* Este es el modal que se abre cuando navegas a /projects/:id */}
+      <Dialog 
+        open={isViewOpen} 
+        onOpenChange={(open) => {
+          setIsViewOpen(open);
+          if (!open) {
+            navigate('/projects'); // LIMPIA LA URL AL CERRAR
+          }
+        }}
+      >
         <DialogContent className="min-w-2xl w-full max-w-4xl bg-slate-900 border-slate-700 text-slate-100 p-0">
           <div className="max-h-[80vh] overflow-y-auto p-6 space-y-6 break-words break-all">
             <DialogHeader>
