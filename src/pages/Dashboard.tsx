@@ -10,10 +10,9 @@ import {
   Clock,
   CheckCircle2,
   Eye,
-  Calendar,
-  ExternalLink
+  Calendar
 } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useNavigate } from "react-router-dom"
@@ -72,7 +71,7 @@ const Dashboard = () => {
         if (projectsRes.status === 'fulfilled') {
           const projectsData = projectsRes.value.data.data
           setStats(prev => ({ ...prev, totalProjects: projectsData.length }))
-          setRecentProjects(projectsData.slice(0, 3))
+          setRecentProjects(projectsData.slice(0, 4))
           setAllProjects(projectsData) 
         }
         if (usersRes.status === 'fulfilled') {
@@ -210,14 +209,9 @@ const Dashboard = () => {
               {statCards.map((stat, index) => (
                 <Card key={index} className="bg-gray-900 border-gray-800 shadow-lg hover:border-gray-700 transition-all relative">
                   <Dialog>
-                    {/* IMPORTANTE: 
-                      Para "Carreras" y "Skills" (no projects), toda la tarjeta abre el modal.
-                      Para "Projects", se maneja por separado dentro del CardContent.
-                    */}
                     {stat.key !== 'projects' ? (
                       <DialogTrigger asChild>
                          <CardContent className="p-6 cursor-pointer group">
-                           {/* Contenido de Carreras/Skills (Toda la tarjeta es botón) */}
                            <div className="flex justify-between items-start">
                               <div>
                                 <p className="text-sm font-medium text-gray-400 group-hover:text-cyan-400 transition-colors">{stat.label}</p>
@@ -234,7 +228,6 @@ const Dashboard = () => {
                                   {stat.desc}
                                 </span>
                               </div>
-                              {/* Texto Ver lista simulado */}
                               <div className="h-6 flex items-center text-xs text-cyan-400 group-hover:text-cyan-300 font-medium px-2">
                                 <Eye className="w-3 h-3 mr-1" /> Ver lista
                               </div>
@@ -243,10 +236,8 @@ const Dashboard = () => {
                       </DialogTrigger>
                     ) : (
                       <CardContent className="p-6">
-                        {/* Contenido de PROYECTOS (Botones separados) */}
                         <div className="flex justify-between items-start">
                           <div>
-                            {/* Título y Número: Van a /projects */}
                             <p 
                               className="text-sm font-medium text-gray-400 hover:text-cyan-400 transition-colors cursor-pointer"
                               onClick={() => navigate("/projects")}
@@ -261,7 +252,6 @@ const Dashboard = () => {
                             </h3>
                           </div>
                           
-                          {/* Ícono: Abre el Modal (Tiene cursor-pointer explícito) */}
                           <DialogTrigger asChild>
                              <div className={`p-3 rounded-xl ${stat.bg} cursor-pointer hover:opacity-80 transition-opacity`}>
                                <stat.icon className={`w-6 h-6 ${stat.color}`} />
@@ -277,7 +267,6 @@ const Dashboard = () => {
                             </span>
                           </div>
 
-                          {/* Botón Ver lista: Abre el Modal (Tiene cursor-pointer explícito) */}
                           <DialogTrigger asChild>
                             <Button 
                               variant="ghost" 
@@ -291,7 +280,6 @@ const Dashboard = () => {
                       </CardContent>
                     )}
 
-                    {/* Contenido del Modal (Común para todos) */}
                     <DialogContent className="bg-gray-900 border-gray-800 text-white max-h-[80vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle className="text-xl flex items-center gap-2">
@@ -318,32 +306,37 @@ const Dashboard = () => {
               ))}
             </div>
 
-            {/* --- SECCIÓN ÚLTIMOS PROYECTOS (ESTÁNDAR) --- */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <Card className="col-span-1 lg:col-span-3 bg-gray-900 border-gray-800 shadow-lg hover:border-gray-700 transition-all">
+              <Card className="col-span-1 lg:col-span-3 bg-gray-900 border-gray-800 shadow-lg hover:border-gray-700 transition-all p-0 overflow-hidden">
                 
-                {/* Header CLICKABLE */}
-                <CardHeader 
-                  className="border-b border-gray-800 pb-4 cursor-pointer hover:bg-gray-800/50 transition-colors"
-                  onClick={() => navigate("/projects")}
+                {/* BOTÓN ENCABEZADO: p-4 */}
+                <Button 
+                    variant="ghost" 
+                    className="w-full h-auto rounded-none flex items-center justify-between p-4 border-b border-gray-800 hover:bg-gray-800/50 group" 
+                    onClick={() => navigate("/projects")}
                 >
-                  <CardTitle className="text-lg font-bold text-white flex items-center gap-2 group">
-                    <Clock className="w-5 h-5 text-cyan-500"/>
-                    <span className="group-hover:text-cyan-400 transition-colors">Últimos Proyectos</span>
-                    <span className="ml-auto text-xs font-normal text-gray-500 group-hover:text-gray-300 flex items-center">
-                      Ver todo <ArrowRight className="w-3 h-3 ml-1"/>
-                    </span>
-                  </CardTitle>
-                </CardHeader>
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-5 h-5 text-cyan-500 group-hover:text-cyan-400 transition-colors"/>
+                      <span className="text-lg font-bold text-white group-hover:text-cyan-400 transition-colors">
+                        Últimos Proyectos
+                      </span>
+                    </div>
+
+                    <div className="flex items-center text-xs font-normal text-gray-500 group-hover:text-cyan-400 transition-colors gap-1">
+                      Ver todo <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1"/>
+                    </div>
+                </Button>
 
                 <CardContent className="p-0">
                   {recentProjects.length > 0 ? (
-                    <div className="divide-y divide-gray-800">
+                    <div className="flex flex-col">
                       
                       {recentProjects.map((proj) => (
                         <Dialog key={proj.id}>
                           <DialogTrigger asChild>
-                            <div className="p-4 hover:bg-gray-800/50 transition-colors flex justify-between items-center cursor-pointer group/item">
+                            {/* ITEMS DE LISTA: Quitamos 'h-20' para que la altura sea natural y coincida con el encabezado.
+                                Usamos 'p-4' igual que arriba. */}
+                            <div className="p-4 border-b border-gray-800 hover:bg-gray-800/50 transition-colors flex justify-between items-center cursor-pointer group/item">
                               <div>
                                 <h5 className="font-semibold text-gray-200 line-clamp-1 group-hover/item:text-cyan-400 transition-colors">
                                   {proj.name}
