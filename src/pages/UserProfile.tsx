@@ -1,4 +1,4 @@
-import Sidebar from "@/components/SideBar"
+import SideBar from "@/components/SideBar"
 import axios from "axios"
 import { useEffect, useState, useRef } from "react"
 import { useNavigate } from "react-router-dom"
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 
 type UserData = {
+  id: string
   name: string
   email: string
   careerId: string
@@ -23,84 +24,85 @@ type Role = { id: string; name: string }
 
 const UserProfile = () => {
   const navigate = useNavigate()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const accessToken = localStorage.getItem('token')
   const userId = localStorage.getItem('id')
 
   const [loading, setLoading] = useState(true)
+  const [uploading, setUploading] = useState(false)
   const [user, setUser] = useState<UserData | null>(null)
   const [careerName, setCareerName] = useState("Cargando...")
   const [roleName, setRoleName] = useState("Cargando...")
-  const [name, setName] = useState('')
+  const [name, setName] = useState('') // Estado para el nuevo nombre escrito
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const loadProfile = async () => {
+    if (!userId || !accessToken) return
+    setLoading(true)
+    try {
+      const headers = { Authorization: `Bearer ${accessToken}` }
+      
+      const userRes = await axios.get(`http://localhost:8000/api/users/${userId}`, { headers })
+      const userData = userRes.data
+      setUser(userData)
 
-  // 1. MODIFICAMOS LA FUNCIÓN PARA RECIBIR EL EVENTO DEL FORMULARIO
-  const handleEditUser = async(e?: React.FormEvent) => {
-    if (e) e.preventDefault(); // Prevenir recarga al dar Enter
+      const [careersRes, rolesRes] = await Promise.all([
+        axios.get("http://localhost:8000/api/careers", { headers }),
+        axios.get("http://localhost:8000/api/roles", { headers })
+      ])
 
-    if (!name.trim()) return; 
+      const foundCareer = careersRes.data.data.find((c: Career) => c.id === userData.careerId)
+      const foundRole = rolesRes.data.data.find((r: Role) => r.id === userData.roleId)
+
+      setCareerName(foundCareer ? foundCareer.name : "Sin asignar")
+      setRoleName(foundRole ? foundRole.name : "Usuario")
+
+    } catch (error) {
+      console.error("Error cargando perfil:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleEditUser = async () => {
+    // Si el campo está vacío, no hacemos nada (o podrías mostrar una alerta)
+    if (!name.trim()) return
 
     try {
       setLoading(true)
       await axios.patch(`http://localhost:8000/api/users/${userId}`, { name }, {
         headers: { Authorization: `Bearer ${accessToken}` }
       })
-      setName(''); 
       await loadProfile()
+      setName('') // Limpiar después de guardar
     } catch (error) {
-      console.log('Error al editar', error)
+      console.error('Error al editar el usuario', error)
     } finally {
       setLoading(false)
     }
   }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !userId) return;
+    const file = e.target.files?.[0]
+    if (!file) return
 
-    const formData = new FormData();
-    formData.append('file', file);
+    const formData = new FormData()
+    formData.append('file', file)
 
+    setUploading(true)
     try {
-      setLoading(true);
-      await axios.post(`http://localhost:8000/api/users/${userId}/upload`, formData, {
-        headers: { 
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'multipart/form-data' 
+      await axios.patch(`http://localhost:8000/api/users/${userId}/image`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${accessToken}`
         }
-      });
-      await loadProfile(); 
+      })
+      await loadProfile()
     } catch (error) {
-      console.error("Error subiendo imagen:", error);
+      console.error("Error al subir imagen:", error)
     } finally {
-      setLoading(false);
+      setUploading(false)
     }
-  };
-
-  const loadProfile = async () => {
-      setLoading(true)
-      try {
-        const headers = { Authorization: `Bearer ${accessToken}` }
-        const userRes = await axios.get(`http://localhost:8000/api/users/${userId}`, { headers })
-        const userData = userRes.data
-        setUser(userData)
-        
-        const [careersRes, rolesRes] = await Promise.all([
-          axios.get("http://localhost:8000/api/careers", { headers }),
-          axios.get("http://localhost:8000/api/roles", { headers })
-        ])
-        const foundCareer = careersRes.data.data.find((c: Career) => c.id === userData.careerId)
-        const foundRole = rolesRes.data.data.find((r: Role) => r.id === userData.roleId)
-
-        setCareerName(foundCareer ? foundCareer.name : "Sin asignar")
-        setRoleName(foundRole ? foundRole.name : "Usuario")
-
-      } catch (error) {
-        console.error("Error cargando perfil:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
+  }
 
   useEffect(() => {
     if (!accessToken || !userId) {
@@ -108,116 +110,123 @@ const UserProfile = () => {
       return
     }
     loadProfile()
-  }, [userId, accessToken, navigate])
+  }, [userId, accessToken])
 
   return (
     <div className="flex bg-gray-950 min-h-screen text-gray-100 font-sans">
-      <Sidebar />
+      <SideBar />
 
       <main className="flex-1 ml-0 md:ml-64 p-6 flex items-center justify-center">
-        {loading ? (
+        {loading && !user ? (
           <div className="flex flex-col items-center gap-2">
             <Loader2 className="w-8 h-8 text-cyan-500 animate-spin" />
             <span className="text-gray-400 text-sm">Cargando perfil...</span>
           </div>
         ) : (
-          <Card className="w-full max-w-sm bg-gray-900 border-gray-800 shadow-xl">
-            <CardHeader className="flex flex-col items-center pb-2">
+          <Card className="w-full max-w-sm bg-gray-900 border-gray-800 shadow-xl overflow-hidden">
+            <CardHeader className="flex flex-col items-center pb-2 relative pt-8">
               
-              <div className="relative group">
-                <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-800 mb-4 bg-gray-700">
-                  <img 
-                    src={user?.image ? `http://localhost:8000${user.image}` : avatarPlaceholder} 
-                    alt="Avatar" 
-                    className="w-full h-full object-cover" 
-                  />
-                </div>
-                <div 
-                    className="absolute bottom-4 right-0 bg-cyan-600 p-2 rounded-full cursor-pointer hover:bg-cyan-500 transition-colors shadow-lg"
-                    onClick={() => fileInputRef.current?.click()}
-                    title="Cambiar foto"
-                >
-                    <Camera className="w-4 h-4 text-white" />
-                </div>
-                <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    className="hidden" 
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                />
+              {/* SECCIÓN DE IMAGEN */}
+              <div 
+                className="group relative w-28 h-28 rounded-full overflow-hidden border-4 border-gray-800 mb-4 bg-gray-800 cursor-pointer shadow-2xl"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {uploading ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
+                    <Loader2 className="w-8 h-8 text-cyan-500 animate-spin" />
+                  </div>
+                ) : (
+                  <>
+                    <img 
+                      src={user?.image ? `http://localhost:8000${user.image}` : avatarPlaceholder} 
+                      alt="Avatar" 
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110 group-hover:opacity-40" 
+                      onError={(e) => { e.currentTarget.src = avatarPlaceholder }}
+                    />
+                    <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <Camera className="w-8 h-8 text-white mb-1" />
+                      <span className="text-[10px] text-white font-bold uppercase tracking-tighter">Cambiar foto</span>
+                    </div>
+                  </>
+                )}
               </div>
 
-              <div className="flex flex-row items-center gap-2">  
-                  <h2 className="text-2xl font-bold text-white px-3">{user?.name}</h2>
-                  
-                  {/* DIALOG DE EDITAR NOMBRE */}
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="hover:bg-gray-700 h-8 w-8">
-                        <Pencil className="h-4 w-4 text-gray-400 hover:text-white"/>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                accept="image/*" 
+                onChange={handleImageUpload} 
+              />
+
+              {/* NOMBRE Y DIÁLOGO DE EDICIÓN */}
+              <div className="flex flex-row items-center gap-2 mt-2">
+                <h2 className="text-2xl font-bold text-white">{user?.name}</h2>
+                <Dialog onOpenChange={(open) => { if(open) setName('') }}>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-800 text-gray-500 hover:text-cyan-400 transition-colors">
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-gray-900 border-gray-800 text-white">
+                    <DialogHeader>
+                      <DialogTitle>Editar Nombre</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="userName">Nuevo Nombre</Label>
+                        <Input 
+                          id="userName"
+                          value={name} 
+                          placeholder={user?.name} // EL NOMBRE ACTUAL SALE AQUÍ EN GRIS
+                          onChange={(e) => setName(e.target.value)} 
+                          className="bg-gray-950 border-gray-700 focus:border-cyan-500 placeholder:text-gray-600"
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <DialogClose asChild>
+                        <Button variant="ghost" className="hover:bg-gray-800">Cancelar</Button>
+                      </DialogClose>
+                      <Button 
+                        className="bg-cyan-600 hover:bg-cyan-700" 
+                        onClick={handleEditUser}
+                        disabled={!name.trim()} // No deja guardar si el campo está vacío
+                      >
+                        Guardar Cambios
                       </Button>
-                    </DialogTrigger>
-                    <DialogContent className="bg-gray-800 border-gray-700 text-white">
-                      <DialogHeader><DialogTitle>Editar Nombre</DialogTitle></DialogHeader>
-                      
-                      {/* 2. AGREGAMOS <form> AQUÍ */}
-                      <form onSubmit={handleEditUser}>
-                          <div className="space-y-3 py-4">
-                              <div>
-                                  <Label>Nombre</Label>
-                                  <Input 
-                                    onChange={(e)=>setName(e.target.value)} 
-                                    placeholder={user?.name} 
-                                    className="bg-gray-900 border-gray-600 mt-1" 
-                                    value={name}
-                                  />
-                              </div>
-                          </div>
-                          <DialogFooter>
-                            {/* Botón cancelar NO envía formulario (type="button") */}
-                            <DialogClose asChild><Button type="button" variant="ghost" className="hover:bg-gray-700">Cancelar</Button></DialogClose>
-                            
-                            {/* Botón guardar SÍ envía formulario (type="submit") */}
-                            <Button type="submit" className="bg-green-600 hover:bg-green-700">Guardar</Button>
-                          </DialogFooter>
-                      </form>
-
-                    </DialogContent>
-                  </Dialog>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </div>
-              <span className="text-cyan-500 font-medium text-sm bg-cyan-950/50 px-3 py-1 rounded-full border border-cyan-900 mt-1">
+
+              <span className="mt-3 text-cyan-400 font-bold text-[10px] uppercase tracking-widest bg-cyan-950/30 px-4 py-1 rounded-full border border-cyan-900/50">
                 {roleName}
               </span>
             </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex items-center gap-4 p-3 rounded-lg bg-gray-800/50">
-                <div className="bg-gray-700 p-2 rounded-full text-gray-300">
-                  <Mail className="w-5 h-5" />
-                </div>
+
+            <CardContent className="space-y-3 mt-6 px-6 pb-8">
+              <div className="flex items-center gap-4 p-3 rounded-xl bg-gray-950/50 border border-gray-800/50">
+                <div className="bg-gray-800 p-2 rounded-lg text-cyan-500"><Mail className="w-5 h-5" /></div>
                 <div className="overflow-hidden">
-                  <p className="text-xs text-gray-500 uppercase font-semibold">Correo</p>
-                  <p className="text-sm text-gray-200 truncate" title={user?.email}>{user?.email}</p>
+                  <p className="text-[10px] text-gray-500 uppercase font-black tracking-tighter">Correo</p>
+                  <p className="text-sm text-gray-200 truncate font-medium">{user?.email}</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 p-3 rounded-lg bg-gray-800/50">
-                <div className="bg-gray-700 p-2 rounded-full text-gray-300">
-                  <GraduationCap className="w-5 h-5" />
-                </div>
+              <div className="flex items-center gap-4 p-3 rounded-xl bg-gray-950/50 border border-gray-800/50">
+                <div className="bg-gray-800 p-2 rounded-lg text-purple-500"><GraduationCap className="w-5 h-5" /></div>
                 <div>
-                  <p className="text-xs text-gray-500 uppercase font-semibold">Carrera</p>
-                  <p className="text-sm text-gray-200">{careerName}</p>
+                  <p className="text-[10px] text-gray-500 uppercase font-black tracking-tighter">Carrera</p>
+                  <p className="text-sm text-gray-200 font-medium">{careerName}</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 p-3 rounded-lg bg-gray-800/50">
-                <div className="bg-gray-700 p-2 rounded-full text-gray-300">
-                  <Shield className="w-5 h-5" />
-                </div>
+              <div className="flex items-center gap-4 p-3 rounded-xl bg-gray-950/50 border border-gray-800/50">
+                <div className="bg-gray-800 p-2 rounded-lg text-orange-500"><Shield className="w-5 h-5" /></div>
                 <div>
-                  <p className="text-xs text-gray-500 uppercase font-semibold">Rol de Usuario</p>
-                  <p className="text-sm text-gray-200 capitalize">{roleName}</p>
+                  <p className="text-[10px] text-gray-500 uppercase font-black tracking-tighter">Nivel</p>
+                  <p className="text-sm text-gray-200 font-medium">{roleName}</p>
                 </div>
               </div>
             </CardContent>
