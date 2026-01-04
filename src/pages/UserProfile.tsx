@@ -1,12 +1,11 @@
-import SideBar from "@/components/SideBar"
+import Sidebar from "@/components/SideBar"
 import axios from "axios"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import avatarPlaceholder from "../assets/avatar.png"
-import { Loader2, Mail, GraduationCap, Shield } from "lucide-react"
+import { Loader2, Mail, GraduationCap, Shield, Pencil, Camera } from "lucide-react"
 import { DialogTrigger, Dialog, DialogTitle, DialogContent, DialogHeader, DialogFooter, DialogClose } from "@/components/ui/dialog"
-import { Pencil } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -16,7 +15,7 @@ type UserData = {
   email: string
   careerId: string
   roleId: string
-  avatar?: string
+  image?: string 
 }
 
 type Career = { id: string; name: string }
@@ -31,31 +30,61 @@ const UserProfile = () => {
   const [user, setUser] = useState<UserData | null>(null)
   const [careerName, setCareerName] = useState("Cargando...")
   const [roleName, setRoleName] = useState("Cargando...")
-  const [name, setName]=useState('')
+  const [name, setName] = useState('')
 
-  const handleEditUser = async()=> {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 1. MODIFICAMOS LA FUNCIÓN PARA RECIBIR EL EVENTO DEL FORMULARIO
+  const handleEditUser = async(e?: React.FormEvent) => {
+    if (e) e.preventDefault(); // Prevenir recarga al dar Enter
+
+    if (!name.trim()) return; 
+
     try {
       setLoading(true)
-      const req = await axios.patch(`http://localhost:8000/api/users/${userId}`, 
-        {name}
-      )
-      console.log('Usuario Editado', req.data)
+      await axios.patch(`http://localhost:8000/api/users/${userId}`, { name }, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      })
+      setName(''); 
+      await loadProfile()
     } catch (error) {
-      console.log('Error al editar el usuario, intente nuevamente', error)
-    }
-    finally{
+      console.log('Error al editar', error)
+    } finally {
       setLoading(false)
     }
-    await loadProfile()
   }
 
-      const loadProfile = async () => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !userId) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      setLoading(true);
+      await axios.post(`http://localhost:8000/api/users/${userId}/upload`, formData, {
+        headers: { 
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'multipart/form-data' 
+        }
+      });
+      await loadProfile(); 
+    } catch (error) {
+      console.error("Error subiendo imagen:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadProfile = async () => {
       setLoading(true)
       try {
         const headers = { Authorization: `Bearer ${accessToken}` }
         const userRes = await axios.get(`http://localhost:8000/api/users/${userId}`, { headers })
         const userData = userRes.data
         setUser(userData)
+        
         const [careersRes, rolesRes] = await Promise.all([
           axios.get("http://localhost:8000/api/careers", { headers }),
           axios.get("http://localhost:8000/api/roles", { headers })
@@ -78,13 +107,12 @@ const UserProfile = () => {
       navigate("/login")
       return
     }
-
     loadProfile()
   }, [userId, accessToken, navigate])
 
   return (
     <div className="flex bg-gray-950 min-h-screen text-gray-100 font-sans">
-      <SideBar />
+      <Sidebar />
 
       <main className="flex-1 ml-0 md:ml-64 p-6 flex items-center justify-center">
         {loading ? (
@@ -95,41 +123,70 @@ const UserProfile = () => {
         ) : (
           <Card className="w-full max-w-sm bg-gray-900 border-gray-800 shadow-xl">
             <CardHeader className="flex flex-col items-center pb-2">
-              <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-800 mb-4 bg-gray-700">
-                <img 
-                  src={avatarPlaceholder} 
-                  alt="Avatar" 
-                  className="w-full h-full object-cover" 
+              
+              <div className="relative group">
+                <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-800 mb-4 bg-gray-700">
+                  <img 
+                    src={user?.image ? `http://localhost:8000${user.image}` : avatarPlaceholder} 
+                    alt="Avatar" 
+                    className="w-full h-full object-cover" 
+                  />
+                </div>
+                <div 
+                    className="absolute bottom-4 right-0 bg-cyan-600 p-2 rounded-full cursor-pointer hover:bg-cyan-500 transition-colors shadow-lg"
+                    onClick={() => fileInputRef.current?.click()}
+                    title="Cambiar foto"
+                >
+                    <Camera className="w-4 h-4 text-white" />
+                </div>
+                <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept="image/*"
+                    onChange={handleImageUpload}
                 />
               </div>
-              <div className="flex flex-row justify-around">  
-              <div>
-              <h2 className="text-2xl font-bold text-white px-3 justify-self-center">{user?.name}</h2>
-              </div>
-              <div>
+
+              <div className="flex flex-row items-center gap-2">  
+                  <h2 className="text-2xl font-bold text-white px-3">{user?.name}</h2>
+                  
+                  {/* DIALOG DE EDITAR NOMBRE */}
                   <Dialog>
                     <DialogTrigger asChild>
-                      <Button className="hover:bg-gray-700">
-                        <Pencil className="h-4"/>
+                      <Button variant="ghost" size="icon" className="hover:bg-gray-700 h-8 w-8">
+                        <Pencil className="h-4 w-4 text-gray-400 hover:text-white"/>
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="bg-gray-800 border-gray-700 text-white">
-                      <DialogHeader><DialogTitle>Editar Nombre de usuario</DialogTitle></DialogHeader>
-                      <div className="space-y-3 py-4">
-                          <div>
-                              <Label>Nombre</Label>
-                              <Input onChange={(e)=>setName(e.target.value)} placeholder="Juan Pérez" className="bg-gray-900 border-gray-600 mt-1" value={name}/>
+                      <DialogHeader><DialogTitle>Editar Nombre</DialogTitle></DialogHeader>
+                      
+                      {/* 2. AGREGAMOS <form> AQUÍ */}
+                      <form onSubmit={handleEditUser}>
+                          <div className="space-y-3 py-4">
+                              <div>
+                                  <Label>Nombre</Label>
+                                  <Input 
+                                    onChange={(e)=>setName(e.target.value)} 
+                                    placeholder={user?.name} 
+                                    className="bg-gray-900 border-gray-600 mt-1" 
+                                    value={name}
+                                  />
+                              </div>
                           </div>
-                      </div>
-                      <DialogFooter>
-                        <DialogClose asChild><Button variant="ghost" className="hover:bg-gray-700">Cancelar</Button></DialogClose>
-                        <Button className="bg-green-600 hover:bg-green-700" onClick={handleEditUser}>Editar</Button>
-                      </DialogFooter>
+                          <DialogFooter>
+                            {/* Botón cancelar NO envía formulario (type="button") */}
+                            <DialogClose asChild><Button type="button" variant="ghost" className="hover:bg-gray-700">Cancelar</Button></DialogClose>
+                            
+                            {/* Botón guardar SÍ envía formulario (type="submit") */}
+                            <Button type="submit" className="bg-green-600 hover:bg-green-700">Guardar</Button>
+                          </DialogFooter>
+                      </form>
+
                     </DialogContent>
                   </Dialog>
-                </div>
               </div>
-              <span className="text-cyan-500 font-medium text-sm bg-cyan-950/50 px-3 py-1 rounded-full border border-cyan-900">
+              <span className="text-cyan-500 font-medium text-sm bg-cyan-950/50 px-3 py-1 rounded-full border border-cyan-900 mt-1">
                 {roleName}
               </span>
             </CardHeader>

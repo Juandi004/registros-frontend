@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom"
 import { Eye, EyeOff, Check} from "lucide-react"
 import { Link } from "react-router-dom"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircleIcon } from "lucide-react" // <--- CORREGIDO: Se quitó CheckCircle2Icon
+import { AlertCircleIcon } from "lucide-react" 
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay"
 
 type Career = {
@@ -67,7 +67,10 @@ const RegisterPage = () => {
     ? role.find(r => r.name === 'TEACHER')?.id
     : "";
 
-  const handleRegister = async () => {
+  // MODIFICADO: Recibe el evento para prevenir recarga
+  const handleRegister = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault() // <--- IMPORTANTE: Previene que la página se recargue al dar Enter
+
     if (!isPasswordValid) {
       setValidationError(true);
       setTimeout(() => setValidationError(false), 3000);
@@ -109,7 +112,8 @@ const RegisterPage = () => {
   return (
     <>
       <div className="flex items-center justify-center min-h-screen bg-gray-900 p-4">
-        <div className="w-full max-w-sm p-8 bg-gray-800 rounded-2xl shadow-lg space-y-6 text-gray-100">
+        {/* MODIFICADO: Cambié el div principal por form y agregué onSubmit */}
+        <form onSubmit={handleRegister} className="w-full max-w-sm p-8 bg-gray-800 rounded-2xl shadow-lg space-y-6 text-gray-100">
           <h1 className="text-xl font-semibold text-center text-white">Registrarse</h1>
           <Label htmlFor="name">Nombre</Label>
           <Input
@@ -167,9 +171,10 @@ const RegisterPage = () => {
           </div>
 
           <Button
+            type="submit" // MODIFICADO: Agregado type="submit" para que el Enter funcione
             className="w-full bg-cyan-600 hover:bg-cyan-500 text-white "
-            onClick={handleRegister}
             disabled={loading}
+            // Quitamos onClick={handleRegister} porque el form onSubmit ya lo maneja
           >
             {loading ? "Cargando..." : "Registrarse"}
           </Button>
@@ -179,7 +184,7 @@ const RegisterPage = () => {
               Iniciar Sesión
             </Link>
           </p>
-        </div>
+        </form>
       </div>
 
       {errorAlert && (

@@ -761,13 +761,13 @@ const ProyectPage = () => {
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="bg-gray-800 border-gray-700 text-white">
-                    <DialogHeader><DialogTitle>Crear Skill</DialogTitle></DialogHeader>
+                    <DialogHeader><DialogTitle>Crear Habilidad</DialogTitle></DialogHeader>
                     <Form {...createSkillForm}>
                       <form onSubmit={createSkillForm.handleSubmit(handleCreateSkill)} className="space-y-3 py-4">
                         <FormField control={createSkillForm.control} name="name" render={({ field }) => (
                           <FormItem>
                             <FormLabel>Nombre</FormLabel>
-                            <FormControl><Input className="bg-gray-900 border-gray-600 mt-1" placeholder="Ej: Python" {...field} /></FormControl>
+                            <FormControl><Input className="bg-gray-900 border-gray-600 mt-1" placeholder="Habilidad" {...field} /></FormControl>
                             <FormMessage className="text-red-500 text-xs" />
                           </FormItem>
                         )} />
@@ -780,7 +780,7 @@ const ProyectPage = () => {
                         )} />
                         <DialogFooter>
                           <DialogClose asChild><Button variant="ghost" className="hover:bg-gray-700">Cancelar</Button></DialogClose>
-                          <Button type="submit" className="bg-green-600 hover:bg-green-700" disabled={loading}>{loading ? "Creando skill..." : "Crear Skill"}</Button>
+                          <Button type="submit" className="bg-green-600 hover:bg-green-700" disabled={loading}>{loading ? "Creando skill..." : "Crear Habilidad "}</Button>
                         </DialogFooter>
                       </form>
                     </Form>
@@ -792,7 +792,7 @@ const ProyectPage = () => {
                   <TableHeader className="bg-gray-900/50">
                     <TableRow className="border-gray-700 hover:bg-gray-900/50">
                       <TableHead className="text-gray-300 font-bold min-w-[250px]">Proyecto</TableHead>
-                      <TableHead className="text-gray-300 font-bold">Detalles & Skills</TableHead>
+                      <TableHead className="text-gray-300 font-bold">Detalles & Habilidades </TableHead>
                       <TableHead className="text-gray-300 font-bold min-w-[250px]">Objetivos</TableHead>
                       <TableHead className="text-gray-300 font-bold min-w-[250px]">Entregables</TableHead>
                       <TableHead className="text-gray-300 font-bold min-w-[150px]">Fechas & Estado</TableHead>
