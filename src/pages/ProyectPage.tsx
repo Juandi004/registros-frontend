@@ -117,13 +117,11 @@ type User = {
   name: string
 }
 
-// 1. MODIFICAMOS EL TIPO SKILL
 type Skill = {
   id: string,
   name: string,
   description: string,
-  details: any,
-  createdBy?: string // Nuevo campo agregado
+  details: any
 }
 
 type ProjectSkill = {
@@ -177,10 +175,6 @@ const ProyectPage = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [isSkillOpen, setIsSkillOpen] = useState(false)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
-
-  // 2. NUEVOS ESTADOS PARA PESTAÑAS DE HABILIDADES
-  const [skillTab, setSkillTab] = useState<'crear' | 'editar'>('crear');
-  const [editingSkill, setEditingSkill] = useState<Skill | null>(null);
 
   const createSkillForm = useForm<z.infer<typeof skillSchema>>({
     resolver: zodResolver(skillSchema),
@@ -320,9 +314,7 @@ const ProyectPage = () => {
       await fetchSkillsData();
       setSuccess(true);
       createSkillForm.reset();
-      // No cerramos el modal, solo reseteamos o mostramos éxito, 
-      // pero si prefieres cerrar: setIsSkillOpen(false);
-      // Aquí dejaremos que el usuario decida si crear otra o salir.
+      setIsSkillOpen(false);
       setTimeout(() => setSuccess(false), 3000);
     } catch (error) {
       setErrorAlert(true);
@@ -331,33 +323,6 @@ const ProyectPage = () => {
       setLoading(false)
     }
   }
-
-  // 3. NUEVA FUNCIÓN PARA EDITAR HABILIDAD
-  const handleUpdateSkill = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingSkill) return;
-
-    setLoading(true);
-    try {
-      await axios.patch(`http://localhost:8000/api/skills/${editingSkill.id}`, {
-        name: editingSkill.name,
-        description: editingSkill.description
-      }, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
-      
-      await fetchSkillsData();
-      setSuccess(true);
-      setEditingSkill(null); // Volver a la lista
-      setTimeout(() => setSuccess(false), 3000);
-    } catch (error) {
-      console.error(error);
-      setErrorAlert(true);
-      setTimeout(() => setErrorAlert(false), 3000);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCreateProyect = async (values: z.infer<typeof projectSchema>) => {
     try {
@@ -789,147 +754,38 @@ const ProyectPage = () => {
             <div className="bg-gray-800 rounded-xl border border-gray-700 shadow-xl overflow-hidden">
               <div className="p-4 border-b border-gray-700 bg-gray-900/30 flex justify-between items-center">
                 <h2 className="text-lg font-bold text-white">Directorio Completo de Proyectos</h2>
-                
-                {/* 4. MODAL CON PESTAÑAS PARA GESTIÓN DE HABILIDADES */}
                 <Dialog open={isSkillOpen} onOpenChange={setIsSkillOpen}>
                   <DialogTrigger asChild>
-                    <Button 
-                      className="bg-green-600 hover:bg-green-700 text-white font-semibold flex items-center gap-2 text-sm"
-                      onClick={() => {
-                        setSkillTab('crear'); // Resetear a pestaña crear al abrir
-                        setEditingSkill(null);
-                      }}
-                    >
-                      <Plus className="w-4 h-4" /> Gestión Habilidades
+                    <Button className="bg-green-600 hover:bg-green-700 text-white font-semibold flex items-center gap-2 text-sm">
+                      <Plus className="w-4 h-4" /> Nueva Habilidad 
                     </Button>
                   </DialogTrigger>
-                  
-                  <DialogContent className="bg-gray-800 border-gray-700 text-white sm:max-w-lg">
-                    <DialogHeader>
-                      <DialogTitle>Gestión de Habilidades</DialogTitle>
-                      
-                      {/* --- PESTAÑAS --- */}
-                      <div className="flex gap-4 border-b border-gray-700 mt-4">
-                        <button 
-                          onClick={() => { setSkillTab('crear'); setEditingSkill(null); }}
-                          className={`pb-2 text-sm font-medium transition-colors border-b-2 ${skillTab === 'crear' ? 'text-cyan-400 border-cyan-400' : 'text-gray-400 border-transparent hover:text-white'}`}
-                        >
-                          Crear Nueva
-                        </button>
-                        <button 
-                          onClick={() => setSkillTab('editar')}
-                          className={`pb-2 text-sm font-medium transition-colors border-b-2 ${skillTab === 'editar' ? 'text-cyan-400 border-cyan-400' : 'text-gray-400 border-transparent hover:text-white'}`}
-                        >
-                          Editar Existentes
-                        </button>
-                      </div>
-                    </DialogHeader>
-
-                    {/* --- CONTENIDO PESTAÑA: CREAR --- */}
-                    {skillTab === 'crear' && (
-                      <Form {...createSkillForm}>
-                        <form onSubmit={createSkillForm.handleSubmit(handleCreateSkill)} className="space-y-3 py-4">
-                          <FormField control={createSkillForm.control} name="name" render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Nombre</FormLabel>
-                              <FormControl><Input className="bg-gray-900 border-gray-600 mt-1" placeholder="Ej. React" {...field} /></FormControl>
-                              <FormMessage className="text-red-500 text-xs" />
-                            </FormItem>
-                          )} />
-                          <FormField control={createSkillForm.control} name="description" render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Descripción</FormLabel>
-                              <FormControl><Input className="bg-gray-900 border-gray-600 mt-1" placeholder="Descripción breve" {...field} /></FormControl>
-                              <FormMessage className="text-red-500 text-xs" />
-                            </FormItem>
-                          )} />
-                          <DialogFooter>
-                            <DialogClose asChild><Button variant="ghost" className="hover:bg-gray-700">Cancelar</Button></DialogClose>
-                            <Button type="submit" className="bg-green-600 hover:bg-green-700" disabled={loading}>
-                              {loading ? "Guardando..." : "Crear Habilidad"}
-                            </Button>
-                          </DialogFooter>
-                        </form>
-                      </Form>
-                    )}
-
-                    {/* --- CONTENIDO PESTAÑA: EDITAR --- */}
-                    {skillTab === 'editar' && (
-                      <div className="py-4 space-y-4">
-                        {/* A) Formulario de Edición (Si se seleccionó una) */}
-                        {editingSkill ? (
-                          <form onSubmit={handleUpdateSkill} className="space-y-3 bg-gray-900/50 p-4 rounded border border-gray-600">
-                             <h4 className="text-sm font-bold text-cyan-400 mb-2">Editando: {editingSkill.name}</h4>
-                             <div className="space-y-1">
-                               <Label>Nombre</Label>
-                               <Input 
-                                  value={editingSkill.name} 
-                                  onChange={e => setEditingSkill({...editingSkill, name: e.target.value})}
-                                  className="bg-gray-800 border-gray-600"
-                               />
-                             </div>
-                             <div className="space-y-1">
-                               <Label>Descripción</Label>
-                               <Input 
-                                  value={editingSkill.description} 
-                                  onChange={e => setEditingSkill({...editingSkill, description: e.target.value})}
-                                  className="bg-gray-800 border-gray-600"
-                               />
-                             </div>
-                             <div className="flex gap-2 justify-end mt-4">
-                               <Button type="button" variant="ghost" size="sm" onClick={() => setEditingSkill(null)}>Atrás</Button>
-                               <Button type="submit" size="sm" className="bg-cyan-600 hover:bg-cyan-700">Actualizar</Button>
-                             </div>
-                          </form>
-                        ) : (
-                          /* B) Lista de Habilidades con Filtro */
-                          <div className="space-y-3">
-                             <Input 
-                               placeholder="Buscar habilidad para editar..." 
-                               className="bg-gray-900 border-gray-600"
-                               onChange={(e) => setSkillSearch(e.target.value)}
-                             />
-                             <div className="max-h-[300px] overflow-y-auto space-y-2 pr-2">
-                               {skills
-                                 .filter(s => s.name.toLowerCase().includes(skillSearch.toLowerCase()))
-                                 .map(skill => {
-                                   // --- LÓGICA DE PERMISOS ---
-                                   const isAdmin = roleName === 'ADMIN'; 
-                                   // NOTA: Asegúrate que userId sea string.
-                                   const isCreator = skill.createdBy === userId; 
-                                   const canEdit = isAdmin || isCreator;
-
-                                   return (
-                                     <div key={skill.id} className="flex items-center justify-between p-3 bg-gray-700/30 rounded border border-gray-700 hover:bg-gray-700/50 transition-colors">
-                                       <div className="overflow-hidden mr-2">
-                                         <p className="font-medium text-sm text-gray-200 truncate">{skill.name}</p>
-                                         <p className="text-xs text-gray-400 truncate">{skill.description}</p>
-                                       </div>
-                                       
-                                       {canEdit ? (
-                                         <Button 
-                                           size="icon" 
-                                           variant="ghost" 
-                                           className="h-8 w-8 text-cyan-400 hover:text-white hover:bg-cyan-600/20 shrink-0"
-                                           onClick={() => setEditingSkill(skill)}
-                                           title="Editar habilidad"
-                                         >
-                                           <Pencil className="w-4 h-4" />
-                                         </Button>
-                                       ) : (
-                                         <span className="text-[10px] text-gray-600 italic shrink-0 px-2">Solo lectura</span>
-                                       )}
-                                     </div>
-                                   )
-                               })}
-                             </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                  <DialogContent className="bg-gray-800 border-gray-700 text-white">
+                    <DialogHeader><DialogTitle>Crear Habilidad</DialogTitle></DialogHeader>
+                    <Form {...createSkillForm}>
+                      <form onSubmit={createSkillForm.handleSubmit(handleCreateSkill)} className="space-y-3 py-4">
+                        <FormField control={createSkillForm.control} name="name" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nombre</FormLabel>
+                            <FormControl><Input className="bg-gray-900 border-gray-600 mt-1" placeholder="Habilidad" {...field} /></FormControl>
+                            <FormMessage className="text-red-500 text-xs" />
+                          </FormItem>
+                        )} />
+                        <FormField control={createSkillForm.control} name="description" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Descripción</FormLabel>
+                            <FormControl><Input className="bg-gray-900 border-gray-600 mt-1" placeholder="Descripción breve" {...field} /></FormControl>
+                            <FormMessage className="text-red-500 text-xs" />
+                          </FormItem>
+                        )} />
+                        <DialogFooter>
+                          <DialogClose asChild><Button variant="ghost" className="hover:bg-gray-700">Cancelar</Button></DialogClose>
+                          <Button type="submit" className="bg-green-600 hover:bg-green-700" disabled={loading}>{loading ? "Creando skill..." : "Crear Habilidad "}</Button>
+                        </DialogFooter>
+                      </form>
+                    </Form>
                   </DialogContent>
                 </Dialog>
-
               </div>
               <div className="overflow-x-auto">
                 <Table>
