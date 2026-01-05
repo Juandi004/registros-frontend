@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { NavLink, useNavigate } from "react-router-dom"
+import { NavLink, useNavigate, Link } from "react-router-dom" // Agregué Link
 import axios from "axios"
 import { useAuthStore } from "@/store/authStore"
 import { Home, User, Settings, LogOut, Menu } from "lucide-react"
@@ -70,20 +70,25 @@ const Sidebar = () => {
           <h1 className="text-white font-bold text-xl">RepoDigital ITS</h1>
         </div>
 
-        {/* SECCIÓN DE USUARIO (FOTO Y DATOS) */}
+        {/* SECCIÓN DE USUARIO (FOTO Y DATOS) - AHORA COMO BOTÓN */}
         {isLogged && user && (
-          <div className="flex flex-col items-center py-5 border-b border-gray-800">
-            {/* Contenedor de la imagen para asegurar que sea redonda y centrada */}
-            <div className="w-20 h-20 rounded-full overflow-hidden mb-3 border-2 border-gray-700 bg-gray-800">
-              <img 
-                /* Aquí verificamos si user.image existe. Si sí, usamos la URL del backend. Si no, el avatar por defecto */
-                src={user.image ? `http://localhost:8000${user.image}` : avatar} 
-                alt="Perfil" 
-                className="w-full h-full object-cover" 
-              />
-            </div>
-            <p className="font-semibold text-center px-2">{user.name}</p>
-            <p className="text-xs text-gray-400 max-w-[200px] truncate text-center">{user.email}</p>
+          <div className="border-b border-gray-800 py-5">
+             <Link 
+               to="/profile" // Redirige al perfil
+               className="flex flex-col items-center group cursor-pointer hover:bg-gray-800/50 transition-colors py-2"
+               title="Ir a mi perfil"
+             >
+                {/* Contenedor de la imagen con efecto hover */}
+                <div className="w-20 h-20 rounded-full overflow-hidden mb-3 border-2 border-gray-700 bg-gray-800 transition-transform duration-300 group-hover:scale-105 group-hover:border-cyan-500/50">
+                  <img 
+                    src={user.image ? `http://localhost:8000${user.image}` : avatar} 
+                    alt="Perfil" 
+                    className="w-full h-full object-cover" 
+                  />
+                </div>
+                <p className="font-semibold text-center px-2 group-hover:text-cyan-400 transition-colors">{user.name}</p>
+                <p className="text-xs text-gray-400 max-w-[200px] truncate text-center">{user.email}</p>
+             </Link>
           </div>
         )}
 
@@ -105,21 +110,21 @@ const Sidebar = () => {
 
                   <DialogContent className="sm:max-w-md bg-gray-800">
                     <DialogHeader>
-                      <DialogTitle className="text-m">Cerrar Sesión</DialogTitle>
+                      <DialogTitle className="text-m text-white">Cerrar Sesión</DialogTitle>
                     </DialogHeader>
 
-                    <DialogDescription>
+                    <DialogDescription className="text-gray-300">
                       ¿Está seguro que desea cerrar sesión?
                     </DialogDescription>
 
                     <DialogFooter>
                       <DialogClose asChild>
-                        <Button className="bg-gray-700 hover:bg-gray-900" variant="ghost">
+                        <Button className="bg-gray-700 hover:bg-gray-900 text-white" variant="ghost">
                           Cancelar
                         </Button>
                       </DialogClose>
                       <Button
-                        className="bg-red-500 hover:bg-red-900 cursor-pointer"
+                        className="bg-red-500 hover:bg-red-900 cursor-pointer text-white"
                         onClick={handleLogout}
                       >
                         Cerrar Sesión
