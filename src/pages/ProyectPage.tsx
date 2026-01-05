@@ -13,7 +13,6 @@ import { useParams, useNavigate } from "react-router-dom"
 
 import { 
   Dialog, 
-  // DialogClose eliminado
   DialogContent, 
   DialogHeader, 
   DialogTrigger, 
@@ -32,7 +31,6 @@ import {
   Code2, 
   CheckCircle2Icon, 
   Pencil, 
-  // Trash eliminado
   Plus, 
   User2, 
   Check, 
@@ -42,7 +40,7 @@ import {
   Link as LinkIcon,
   ExternalLink,
   Zap,
-  Trash2, // Usamos Trash2
+  Trash2, 
   AlertTriangle,
   Lock,
   Globe,
@@ -65,7 +63,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay"
 
 // --- ESQUEMAS ---
@@ -153,7 +151,6 @@ const ProyectPage = () => {
   const [errorDelete, setErrorDelete] = useState(false)
 
   const [search, setSearch] = useState("")
-  // Buscador para el formulario de crear proyecto
   const [skillSearch, setSkillSearch] = useState("")
   
   // NUEVO: Buscador específico para la ventana de Gestionar Habilidades
@@ -326,7 +323,7 @@ const ProyectPage = () => {
       await axios.post('http://localhost:8000/api/skills', {
         name: values.name,
         description: values.description,
-        details: JSON.stringify({ "level": "N/A", "category": "N/A" })
+        details: { level: "N/A", category: "N/A" } 
       }, { headers: { Authorization: `Bearer ${accessToken}` } })
       
       await fetchSkillsData();
@@ -555,9 +552,82 @@ const ProyectPage = () => {
 
   const capitalizeFirst = (str: string) => str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : "";
 
+  // Helper para dividir skills filtradas
   const filteredSkills = skills.filter(s => s.name.toLowerCase().includes(manageSkillSearch.toLowerCase()));
   const mySkillsList = filteredSkills.filter(s => s.createdById === userId);
   const otherSkillsList = filteredSkills.filter(s => s.createdById !== userId);
+
+  // --- COMPONENTE DE TARJETA REUTILIZABLE DENTRO DEL COMPONENTE ---
+  const SkillCardItem = ({ skill, canEdit }: { skill: Skill, canEdit: boolean }) => {
+    const isVisible = visibleDescriptions[skill.id];
+    
+    return (
+      // REDUCCIÓN DE TAMAÑO: min-h ajustado a 80px (antes 100px) y padding reducido
+      <Card className="bg-gray-800/80 border-gray-700 hover:border-cyan-500/50 transition-colors flex flex-col min-h-[30px] overflow-hidden">
+        {/* PARTE SUPERIOR: NOMBRE (Centrado y grande, pero con padding reducido p-2) */}
+        <div className="p-0 border-b border-gray-700/50 bg-gray-999/20 flex items-center justify-center">
+            <h4 className="font-bold text-xl text-base text-center leading-tight truncate w-full" title={skill.name}>{skill.name}</h4>
+        </div>
+
+        {/* PARTE INFERIOR: CONTENIDO DIVIDIDO CON PADDING REDUCIDO */}
+        <div className="flex flex-30 p-1.5 gap-1">
+            
+            {/* IZQUIERDA: DESCRIPCIÓN (VISIBLE / OCULTA) */}
+            <div className="flex-1 min-w-0 flex items-center">
+                {isVisible ? (
+                    <p className="text-[10px] text-gray-300 leading-tight break-words line-clamp-3 bg-gray-900/50 p-1.5 rounded border border-gray-700/30 w-full">
+                        {skill.description}
+                    </p>
+                ) : (
+                    <div className="flex items-center gap-1 text-[10px] text-gray-600 italic select-none">
+                        <Lock className="w-3 h-3" /> Info oculta
+                    </div>
+                )}
+            </div>
+
+            {/* DERECHA: ACCIONES (OJITO, EDITAR, ELIMINAR) */}
+            <div className="flex flex-col justify-center gap-1 border-l border-gray-700/30 pl-1.5 shrink-0">
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className={`h-6 w-6 ${isVisible ? 'text-cyan-400 bg-cyan-950/30' : 'text-gray-400 hover:text-white'}`}
+                    onClick={() => toggleVisibility(skill.id)}
+                    title={isVisible ? "Ocultar descripción" : "Ver descripción"}
+                >
+                    {isVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </Button>
+
+                {canEdit && (
+                    <>
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 text-yellow-500/80 hover:text-yellow-400 hover:bg-yellow-950/30"
+                            onClick={() => {
+                                setEditSkillName(skill.name);
+                                setEditSkillDesc(skill.description);
+                                setEditingSkill(skill);
+                            }}
+                            title="Editar"
+                        >
+                            <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 text-red-500/80 hover:text-red-400 hover:bg-red-950/30"
+                            onClick={() => setSkillToDelete(skill)}
+                            title="Eliminar"
+                        >
+                            <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                    </>
+                )}
+            </div>
+        </div>
+      </Card>
+    )
+  }
 
   const renderFormFields = (form: any) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
@@ -715,45 +785,45 @@ const ProyectPage = () => {
                     </Button>
                   </DialogTrigger>
                   
-                  {/* MODAL GESTIÓN */}
-                  <DialogContent className="w-[95vw] max-w-md bg-gray-900 border-gray-700 text-white flex flex-col max-h-[85vh]">
+                  {/* MODAL GESTIÓN (TAMAÑO REDUCIDO A max-w-sm) */}
+                  <DialogContent className="w-[95vw] max-w-sm bg-gray-900 border-gray-700 text-white flex flex-col max-h-[80vh]">
                     
-                    {/* ENCABEZADO CON MARGEN DERECHO PARA LA X (pr-16 y pt-4) */}
-                    <DialogHeader className="flex flex-col gap-2 pr-16 pt-4">
-                       <div className="flex items-center justify-between">
-                         <DialogTitle className="text-lg font-bold text-cyan-400 flex items-center gap-2">
-                           <Zap className="w-4 h-4" /> Habilidades
-                         </DialogTitle>
-                         
-                         {/* Botón Crear */}
-                         <Dialog open={isCreateSkillOpen} onOpenChange={setIsCreateSkillOpen}>
-                           <DialogTrigger asChild>
-                             <Button size="sm" variant="outline" className="border-cyan-600 text-cyan-400 hover:bg-cyan-900/20 gap-2 h-7 text-xs">
-                               <Plus className="w-3 h-3" /> Nueva
-                             </Button>
-                           </DialogTrigger>
-                           <DialogContent className="bg-gray-800 border-gray-700 text-white z-[60]">
-                             <DialogHeader><DialogTitle>Crear Nueva Habilidad</DialogTitle></DialogHeader>
-                             <Form {...createSkillForm}>
-                               <form onSubmit={createSkillForm.handleSubmit(handleCreateSkill)} className="space-y-4 py-4">
-                                 <FormField control={createSkillForm.control} name="name" render={({ field }) => (
-                                   <FormItem><FormLabel>Nombre</FormLabel><FormControl><Input className="bg-gray-900 border-gray-600" {...field} /></FormControl><FormMessage /></FormItem>
-                                 )} />
-                                 <FormField control={createSkillForm.control} name="description" render={({ field }) => (
-                                   <FormItem><FormLabel>Descripción</FormLabel><FormControl><Input className="bg-gray-900 border-gray-600" {...field} /></FormControl><FormMessage /></FormItem>
-                                 )} />
-                                 <DialogFooter>
-                                   <Button type="button" variant="ghost" onClick={() => setIsCreateSkillOpen(false)}>Cancelar</Button>
-                                   <Button type="submit" className="bg-cyan-600 hover:bg-cyan-700" disabled={loading}>Crear</Button>
-                                 </DialogFooter>
-                               </form>
-                             </Form>
-                           </DialogContent>
-                         </Dialog>
-                       </div>
-                       
-                       {/* CONTROLES DE PESTAÑAS */}
-                       <div className="flex p-1 bg-gray-800 rounded-lg border border-gray-700 mt-1">
+                    {/* ENCABEZADO CON MARGEN DERECHO PARA LA X (pr-10) */}
+                    <DialogHeader className="flex flex-col gap-2 pr-10">
+                        <div className="flex items-center justify-between">
+                          <DialogTitle className="text-lg font-bold text-cyan-400 flex items-center gap-2">
+                            <Zap className="w-4 h-4" /> Habilidades
+                          </DialogTitle>
+                          
+                          {/* Botón Crear */}
+                          <Dialog open={isCreateSkillOpen} onOpenChange={setIsCreateSkillOpen}>
+                            <DialogTrigger asChild>
+                              <Button size="sm" variant="outline" className="border-cyan-600 text-cyan-400 hover:bg-cyan-900/20 gap-2 h-7 text-xs">
+                                <Plus className="w-3 h-3" /> Nueva
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="bg-gray-800 border-gray-700 text-white z-[60]">
+                              <DialogHeader><DialogTitle>Crear Nueva Habilidad</DialogTitle></DialogHeader>
+                              <Form {...createSkillForm}>
+                                <form onSubmit={createSkillForm.handleSubmit(handleCreateSkill)} className="space-y-4 py-4">
+                                  <FormField control={createSkillForm.control} name="name" render={({ field }) => (
+                                    <FormItem><FormLabel>Nombre</FormLabel><FormControl><Input className="bg-gray-900 border-gray-600" {...field} /></FormControl><FormMessage /></FormItem>
+                                  )} />
+                                  <FormField control={createSkillForm.control} name="description" render={({ field }) => (
+                                    <FormItem><FormLabel>Descripción</FormLabel><FormControl><Input className="bg-gray-900 border-gray-600" {...field} /></FormControl><FormMessage /></FormItem>
+                                  )} />
+                                  <DialogFooter>
+                                    <Button type="button" variant="ghost" onClick={() => setIsCreateSkillOpen(false)}>Cancelar</Button>
+                                    <Button type="submit" className="bg-cyan-600 hover:bg-cyan-700" disabled={loading}>Crear</Button>
+                                  </DialogFooter>
+                                </form>
+                              </Form>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                        
+                        {/* CONTROLES DE PESTAÑAS */}
+                        <div className="flex p-1 bg-gray-800 rounded-lg border border-gray-700 mt-1">
                           <button 
                             onClick={() => setActiveTab("mine")}
                             className={`flex-1 flex items-center justify-center gap-2 text-xs font-medium py-1.5 rounded-md transition-all ${activeTab === "mine" ? "bg-gray-700 text-white shadow-sm" : "text-gray-400 hover:text-gray-200"}`}
@@ -766,10 +836,10 @@ const ProyectPage = () => {
                           >
                             <Globe className="w-3 h-3" /> Comunidad Global
                           </button>
-                       </div>
+                        </div>
 
-                       {/* BUSCADOR INTERNO */}
-                       <div className="relative mt-2">
+                        {/* BUSCADOR INTERNO */}
+                        <div className="relative mt-2">
                           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400" />
                           <Input 
                             value={manageSkillSearch} 
@@ -778,7 +848,7 @@ const ProyectPage = () => {
                             placeholder="Buscar habilidad..." 
                             className="pl-8 bg-gray-800 border-gray-600 text-white text-xs h-8" 
                           />
-                       </div>
+                        </div>
                     </DialogHeader>
                     
                     {/* CUERPO DEL MODAL */}
@@ -791,52 +861,13 @@ const ProyectPage = () => {
                              <div className="text-center p-8 border border-dashed border-gray-700 rounded-xl text-gray-500 text-xs">
                                No tienes habilidades creadas aún.
                              </div>
-                          ) : (
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2"> 
-                              {mySkillsList.map(skill => {
-                                 const isVisible = visibleDescriptions[skill.id];
-                                 return (
-                                   // CARD CON TAMAÑO FIJO (h-24)
-                                   <Card key={skill.id} className="bg-gray-800/80 border-gray-700 hover:border-green-700/50 transition-colors flex flex-col justify-between h-24 overflow-hidden">
-                                     <CardContent className="p-2 flex flex-col justify-between h-full gap-1 overflow-hidden">
-                                       <div className="h-full flex flex-col">
-                                         <div className="flex justify-between items-center gap-1 mb-1 shrink-0">
-                                            <h4 className="font-bold text-white text-[10px] leading-tight truncate w-full" title={skill.name}>{skill.name}</h4>
-                                            <button onClick={() => toggleVisibility(skill.id)} className="text-gray-400 hover:text-white shrink-0">
-                                              {isVisible ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                                            </button>
-                                         </div>
-                                         
-                                         {/* ZONA DE DESCRIPCIÓN FIJA */}
-                                         <div className="flex-1 text-[9px] text-gray-300 leading-tight pr-1">
-                                            {isVisible && (
-                                              <p className="line-clamp-3">{skill.description}</p>
-                                            )}
-                                         </div>
-                                       </div>
-                                       
-                                       <div className="flex gap-1 justify-end mt-auto pt-1 border-t border-gray-700/30 shrink-0">
-                                          <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-white hover:bg-gray-700"
-                                            onClick={() => {
-                                              setEditSkillName(skill.name);
-                                              setEditSkillDesc(skill.description);
-                                              setEditingSkill(skill);
-                                            }}
-                                          >
-                                            <Pencil className="w-2.5 h-2.5" />
-                                          </Button>
-                                          <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-red-400 hover:bg-gray-700"
-                                            onClick={() => setSkillToDelete(skill)}
-                                          >
-                                            <Trash2 className="w-2.5 h-2.5" />
-                                          </Button>
-                                       </div>
-                                     </CardContent>
-                                   </Card>
-                                 )
-                              })}
-                            </div>
-                          )}
+                           ) : (
+                             <div className="grid grid-cols-2 sm:grid-cols-2 gap-3"> 
+                               {mySkillsList.map(skill => (
+                                  <SkillCardItem key={skill.id} skill={skill} canEdit={true} />
+                               ))}
+                             </div>
+                           )}
                         </div>
                       )}
 
@@ -847,57 +878,13 @@ const ProyectPage = () => {
                              <div className="text-center p-8 border border-dashed border-gray-700 rounded-xl text-gray-500 text-xs">
                                No hay habilidades de la comunidad.
                              </div>
-                          ) : (
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2"> 
-                              {otherSkillsList.map(skill => {
-                                 const canEdit = isAdmin;
-                                 const isVisible = visibleDescriptions[skill.id];
-                                 return (
-                                   // CARD CON TAMAÑO FIJO
-                                   <Card key={skill.id} className="bg-gray-800/50 border-gray-700 hover:border-gray-600 opacity-90 flex flex-col justify-between h-24 overflow-hidden">
-                                     <CardContent className="p-2 flex flex-col justify-between h-full gap-1 overflow-hidden">
-                                       <div className="h-full flex flex-col">
-                                         <div className="flex justify-between items-center gap-1 mb-1 shrink-0">
-                                            <h4 className="font-bold text-gray-300 text-[10px] leading-tight truncate w-full" title={skill.name}>{skill.name}</h4>
-                                            <button onClick={() => toggleVisibility(skill.id)} className="text-gray-500 hover:text-gray-300 shrink-0">
-                                              {isVisible ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                                            </button>
-                                         </div>
-                                         
-                                         {/* ZONA DE DESCRIPCIÓN COMUNIDAD */}
-                                         <div className="flex-1 text-[9px] text-gray-500 leading-tight pr-1">
-                                            {isVisible && (
-                                              <span className="italic flex items-center gap-1 mt-1">
-                                                <Lock className="w-2 h-2" /> Descripción de otro usuario
-                                              </span>
-                                            )}
-                                         </div>
-                                       </div>
-                                       
-                                       {canEdit && (
-                                         <div className="flex gap-1 justify-end mt-auto pt-1 border-t border-gray-700/30 shrink-0">
-                                            <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-500 hover:text-white hover:bg-gray-700"
-                                              onClick={() => {
-                                                setEditSkillName(skill.name);
-                                                setEditSkillDesc(skill.description);
-                                                setEditingSkill(skill);
-                                              }}
-                                            >
-                                              <Pencil className="w-2.5 h-2.5" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-500 hover:text-red-400 hover:bg-gray-700"
-                                              onClick={() => setSkillToDelete(skill)}
-                                            >
-                                              <Trash2 className="w-2.5 h-2.5" />
-                                            </Button>
-                                         </div>
-                                       )}
-                                     </CardContent>
-                                   </Card>
-                                 )
-                              })}
-                            </div>
-                          )}
+                           ) : (
+                             <div className="grid grid-cols-2 sm:grid-cols-2 gap-3"> 
+                               {otherSkillsList.map(skill => (
+                                  <SkillCardItem key={skill.id} skill={skill} canEdit={isAdmin || false} />
+                               ))}
+                             </div>
+                           )}
                         </div>
                       )}
 
