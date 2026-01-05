@@ -557,78 +557,95 @@ const ProyectPage = () => {
   const mySkillsList = filteredSkills.filter(s => s.createdById === userId);
   const otherSkillsList = filteredSkills.filter(s => s.createdById !== userId);
 
-  // --- COMPONENTE DE TARJETA REUTILIZABLE DENTRO DEL COMPONENTE ---
+  // --- COMPONENTE DE TARJETA MEJORADO: DISEÑO MICRO-COMPACTO EXTREMO ---
   const SkillCardItem = ({ skill, canEdit }: { skill: Skill, canEdit: boolean }) => {
     const isVisible = visibleDescriptions[skill.id];
-    
+    const isOwner = skill.createdById === userId;
+
+    // CASO 1: HABILIDAD DE OTRA PERSONA (SUPER COMPACTO)
+if (!isOwner) {
+   return (
+     <Card className="bg-gray-900 border border-gray-800 p-1 flex items-center justify-center shadow-sm hover:border-cyan-500/30 transition-colors h-full">
+        <div className="flex items-center gap-1 overflow-hidden w-full">
+           <div className="p-0.5 rounded-md bg-gray-800/50 text-cyan-500/70 shrink-0">
+             <Code2 className="w-3 h-3" />
+           </div>
+           <span className="text-xs font-bold text-gray-300 truncate text-left w-full" title={skill.name}>
+             {skill.name}
+           </span>
+        </div>
+     </Card>
+   )
+}
+
+    // CASO 2: MI HABILIDAD (ULTRA COMPACTO)
     return (
-      // REDUCCIÓN DE TAMAÑO: min-h ajustado a 80px (antes 100px) y padding reducido
-      <Card className="bg-gray-800/80 border-gray-700 hover:border-cyan-500/50 transition-colors flex flex-col min-h-[30px] overflow-hidden">
-        {/* PARTE SUPERIOR: NOMBRE (Centrado y grande, pero con padding reducido p-2) */}
-        <div className="p-0 border-b border-gray-700/50 bg-gray-999/20 flex items-center justify-center">
-            <h4 className="font-bold text-xl text-base text-center leading-tight truncate w-full" title={skill.name}>{skill.name}</h4>
+      <Card className="group relative bg-gray-900 border border-gray-800 hover:border-cyan-500/50 transition-all duration-300 overflow-hidden flex flex-col shadow-sm hover:shadow-cyan-900/20 p-0">
+        
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/0 via-cyan-900/0 to-cyan-900/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+
+        {/* HEADER: CENTRADO Y MÁS GRANDE */}
+        <div className="flex items-center justify-between px-2 py-1.5 border-b border-gray-800 bg-gray-950/30 gap-2">
+          <div className="p-0.5 rounded-md bg-gray-800 text-cyan-400 group-hover:text-cyan-300 transition-colors shrink-0">
+            <Code2 className="w-4 h-4" />
+          </div>
+          
+          {/* TEXTO MÁS GRANDE, CENTRADO Y NEGRITA */}
+          <h4 className="font-extrabold text-base text-gray-100 truncate flex-1 text-center" title={skill.name}>
+            {skill.name}
+          </h4>
+          
+          <Button
+            variant="ghost"
+            size="icon"
+            className={`h-5 w-5 shrink-0 transition-colors rounded-full p-0 ${isVisible ? "text-cyan-400 bg-cyan-950/50" : "text-gray-500 hover:text-gray-300 hover:bg-gray-800"}`}
+            onClick={() => toggleVisibility(skill.id)}
+            title={isVisible ? "Ocultar" : "Ver"}
+          >
+            {isVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+          </Button>
         </div>
 
-        {/* PARTE INFERIOR: CONTENIDO DIVIDIDO CON PADDING REDUCIDO */}
-        <div className="flex flex-30 p-1.5 gap-1">
-            
-            {/* IZQUIERDA: DESCRIPCIÓN (VISIBLE / OCULTA) */}
-            <div className="flex-1 min-w-0 flex items-center">
-                {isVisible ? (
-                    <p className="text-[10px] text-gray-300 leading-tight break-words line-clamp-3 bg-gray-900/50 p-1.5 rounded border border-gray-700/30 w-full">
-                        {skill.description}
-                    </p>
-                ) : (
-                    <div className="flex items-center gap-1 text-[10px] text-gray-600 italic select-none">
-                        <Lock className="w-3 h-3" /> Info oculta
-                    </div>
-                )}
-            </div>
+        {/* CUERPO: PEGADO A BORDES */}
+<div className="relative" style={{ minHeight: isVisible ? '3rem' : 'auto', maxHeight: isVisible ? '5.5rem' : 'auto' }}> 
+   {isVisible ? (
+     <div className="h-full overflow-y-auto px-2 custom-scrollbar">
+       <p className="text-xs text-gray-300 leading-snug">
+         {skill.description}
+       </p>
+     </div>
+   ) : (
+     <div className="flex items-center justify-center text-gray-700 py-2">
+        <Lock className="w-3 h-3 opacity-50" />
+     </div>
+   )}
+</div>
+        
 
-            {/* DERECHA: ACCIONES (OJITO, EDITAR, ELIMINAR) */}
-            <div className="flex flex-col justify-center gap-1 border-l border-gray-700/30 pl-1.5 shrink-0">
-                <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className={`h-6 w-6 ${isVisible ? 'text-cyan-400 bg-cyan-950/30' : 'text-gray-400 hover:text-white'}`}
-                    onClick={() => toggleVisibility(skill.id)}
-                    title={isVisible ? "Ocultar descripción" : "Ver descripción"}
-                >
-                    {isVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                </Button>
-
-                {canEdit && (
-                    <>
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-6 w-6 text-yellow-500/80 hover:text-yellow-400 hover:bg-yellow-950/30"
-                            onClick={() => {
-                                setEditSkillName(skill.name);
-                                setEditSkillDesc(skill.description);
-                                setEditingSkill(skill);
-                            }}
-                            title="Editar"
-                        >
-                            <Pencil className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-6 w-6 text-red-500/80 hover:text-red-400 hover:bg-red-950/30"
-                            onClick={() => setSkillToDelete(skill)}
-                            title="Eliminar"
-                        >
-                            <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                    </>
-                )}
-            </div>
-        </div>
+        {/* PIE: Acciones MÁS GRANDES */}
+        {canEdit && (
+          <div className="flex border-t border-gray-800 divide-x divide-gray-800 bg-gray-950/20">
+            <button
+              onClick={() => {
+                setEditSkillName(skill.name);
+                setEditSkillDesc(skill.description);
+                setEditingSkill(skill);
+              }}
+              className="flex-1 flex items-center justify-center py-1.5 text-xs font-semibold text-yellow-500/80 hover:text-yellow-400 hover:bg-yellow-950/30 transition-colors gap-1.5"
+            >
+              <Pencil className="w-3.5 h-3.5" /> Editar
+            </button>
+            <button
+              onClick={() => setSkillToDelete(skill)}
+              className="flex-1 flex items-center justify-center py-1.5 text-xs font-semibold text-red-500/80 hover:text-red-400 hover:bg-red-950/30 transition-colors gap-1.5"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
       </Card>
     )
   }
-
   const renderFormFields = (form: any) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
       <FormField control={form.control} name="name" render={({ field }) => (
@@ -656,22 +673,43 @@ const ProyectPage = () => {
         <FormItem className="md:col-span-2"><FormLabel className="text-gray-300">Carrera</FormLabel><FormControl><select className="w-full mt-1 p-2 rounded-md bg-gray-900 border border-gray-600 text-sm text-white" {...field}><option value="">Seleccionar carrera...</option>{careers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></FormControl><FormMessage className="text-red-500 text-xs" /></FormItem>
       )} />
       
-      {/* SELECCIÓN DE HABILIDADES EN EL FORMULARIO */}
+      {/* SELECCIÓN DE HABILIDADES EN EL FORMULARIO (DISEÑO GRID) */}
       <div className="md:col-span-2 bg-gray-900/50 p-4 rounded-lg border border-gray-700">
         <Label className="text-cyan-400 font-bold mb-3 block items-center gap-2"><Code2 className="w-4 h-4" /> Habilidades Requeridas</Label>
         <div className="relative mb-3">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input value={skillSearch} onChange={(e) => setSkillSearch(e.target.value)} type="text" placeholder="Buscar habilidad..." className="pl-9 bg-gray-800 border-gray-600 text-white text-sm h-9" />
         </div>
-        <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-          {skills.filter(s => s.name.toLowerCase().includes(skillSearch.toLowerCase())).map((skill) => (
-            <div key={skill.id} className={`flex items-center space-x-2 p-2 rounded cursor-pointer border transition-colors ${selectedSkills.includes(skill.id) ? 'bg-cyan-900/40 border-cyan-500' : 'hover:bg-gray-800 border-transparent'}`} onClick={() => toggleSkillSelection(skill.id)}>
-              <div className={`w-4 h-4 rounded border flex items-center justify-center ${selectedSkills.includes(skill.id) ? 'bg-cyan-600 border-cyan-600' : 'border-gray-500'}`}>
-                {selectedSkills.includes(skill.id) && <CheckCircle2Icon className="w-3 h-3 text-white" />}
+        
+        {/* GRID DE SELECCIÓN DE SKILLS MEJORADO */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+          {skills.filter(s => s.name.toLowerCase().includes(skillSearch.toLowerCase())).map((skill) => {
+            const isSelected = selectedSkills.includes(skill.id);
+            return (
+              <div 
+                key={skill.id} 
+                onClick={() => toggleSkillSelection(skill.id)}
+                className={`
+                  relative flex items-center gap-2 p-2 rounded-md border cursor-pointer transition-all duration-200 group
+                  ${isSelected 
+                    ? 'bg-cyan-950/40 border-cyan-500/50 shadow-[0_0_10px_-4px_rgba(6,182,212,0.5)]' 
+                    : 'bg-gray-800/50 border-gray-700 hover:border-gray-500 hover:bg-gray-800'
+                  }
+                `}
+              >
+                <div className={`
+                  w-4 h-4 rounded-full border flex items-center justify-center transition-colors
+                  ${isSelected ? 'bg-cyan-500 border-cyan-500' : 'border-gray-500 group-hover:border-cyan-400'}
+                `}>
+                  {isSelected && <Check className="w-3 h-3 text-black font-bold" />}
+                </div>
+                
+                <span className={`text-xs font-medium truncate ${isSelected ? 'text-cyan-100' : 'text-gray-400 group-hover:text-gray-200'}`}>
+                  {skill.name}
+                </span>
               </div>
-              <span className="text-sm text-gray-300">{skill.name}</span>
-            </div>
-          ))}
+            )
+          })}
         </div>
         <p className="text-xs text-gray-500 mt-2 text-right">{selectedSkills.length} seleccionadas</p>
       </div>
@@ -789,7 +827,7 @@ const ProyectPage = () => {
                   <DialogContent className="w-[95vw] max-w-sm bg-gray-900 border-gray-700 text-white flex flex-col max-h-[80vh]">
                     
                     {/* ENCABEZADO CON MARGEN DERECHO PARA LA X (pr-10) */}
-                    <DialogHeader className="flex flex-col gap-2 pr-10">
+                    <DialogHeader className="flex flex-col gap-2 pr-3.5">
                         <div className="flex items-center justify-between">
                           <DialogTitle className="text-lg font-bold text-cyan-400 flex items-center gap-2">
                             <Zap className="w-4 h-4" /> Habilidades
@@ -855,38 +893,38 @@ const ProyectPage = () => {
                     <div className="flex-1 overflow-y-auto pr-1 mt-2">
                       
                       {/* --- PESTAÑA 1: MIS HABILIDADES --- */}
-                      {activeTab === "mine" && (
-                        <div className="space-y-2">
-                          {mySkillsList.length === 0 ? (
-                             <div className="text-center p-8 border border-dashed border-gray-700 rounded-xl text-gray-500 text-xs">
-                               No tienes habilidades creadas aún.
-                             </div>
-                           ) : (
-                             <div className="grid grid-cols-2 sm:grid-cols-2 gap-3"> 
-                               {mySkillsList.map(skill => (
-                                  <SkillCardItem key={skill.id} skill={skill} canEdit={true} />
-                               ))}
-                             </div>
-                           )}
-                        </div>
-                      )}
+{activeTab === "mine" && (
+  <div className="space-y-2">
+    {mySkillsList.length === 0 ? (
+       <div className="text-center p-8 border border-dashed border-gray-700 rounded-xl text-gray-500 text-xs">
+         No tienes habilidades creadas aún.
+       </div>
+     ) : (
+       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"> 
+         {mySkillsList.map(skill => (
+            <SkillCardItem key={skill.id} skill={skill} canEdit={true} />
+         ))}
+       </div>
+     )}
+  </div>
+)}
 
                       {/* --- PESTAÑA 2: COMUNIDAD --- */}
-                      {activeTab === "community" && (
-                        <div className="space-y-2">
-                          {otherSkillsList.length === 0 ? (
-                             <div className="text-center p-8 border border-dashed border-gray-700 rounded-xl text-gray-500 text-xs">
-                               No hay habilidades de la comunidad.
-                             </div>
-                           ) : (
-                             <div className="grid grid-cols-2 sm:grid-cols-2 gap-3"> 
-                               {otherSkillsList.map(skill => (
-                                  <SkillCardItem key={skill.id} skill={skill} canEdit={isAdmin || false} />
-                               ))}
-                             </div>
-                           )}
-                        </div>
-                      )}
+{activeTab === "community" && (
+  <div className="space-y-2">
+    {otherSkillsList.length === 0 ? (
+       <div className="text-center p-8 border border-dashed border-gray-700 rounded-xl text-gray-500 text-xs">
+         No hay habilidades de la comunidad.
+       </div>
+     ) : (
+       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"> 
+         {otherSkillsList.map(skill => (
+            <SkillCardItem key={skill.id} skill={skill} canEdit={isAdmin || false} />
+         ))}
+       </div>
+     )}
+  </div>
+)}
 
                     </div>
                   </DialogContent>
@@ -956,10 +994,18 @@ const ProyectPage = () => {
                                     <p className="text-xs text-gray-400 italic break-words line-clamp-2">{p.summary}</p>
                                   </div>
                                 )}
+                                
+                                {/* USO DE BADGE PARA SKILLS EN TABLA */}
                                 {mySkills.length > 0 && (
-                                  <div className="flex flex-wrap gap-1 mt-2">
+                                  <div className="flex flex-wrap gap-1.5 mt-3">
                                     {mySkills.map(sk => (
-                                      <span key={sk.id} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-cyan-900/30 text-cyan-200 border border-cyan-800">{sk.name}</span>
+                                      <Badge 
+                                        key={sk.id} 
+                                        variant="secondary" 
+                                        className="bg-cyan-950/50 text-cyan-300 border border-cyan-800/50 hover:bg-cyan-900/60 hover:text-cyan-200 text-[10px] px-2 py-0.5 transition-colors"
+                                      >
+                                        {sk.name}
+                                      </Badge>
                                     ))}
                                   </div>
                                 )}
@@ -1054,9 +1100,10 @@ const ProyectPage = () => {
       </Dialog>
       
       {/* MODAL EDITAR HABILIDAD (DENTRO DEL MANAGER) */}
-      <Dialog open={!!editingSkill} onOpenChange={(open) => !open && setEditingSkill(null)}>
-        <DialogContent className="bg-gray-800 border-gray-700 text-white z-[70]">
-          <DialogHeader><DialogTitle>Editar Habilidad</DialogTitle></DialogHeader>
+      {/* MODAL EDITAR HABILIDAD (DENTRO DEL MANAGER) */}
+<Dialog open={!!editingSkill} onOpenChange={(open) => !open && setEditingSkill(null)}>
+  <DialogContent className="bg-gray-800 border-gray-700 text-white z-[70]">
+    <DialogHeader><DialogTitle>Editar Habilidad</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Nombre</Label>
