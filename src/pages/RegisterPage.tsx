@@ -7,7 +7,8 @@ import { useNavigate } from "react-router-dom"
 import { Eye, EyeOff, Check} from "lucide-react"
 import { Link } from "react-router-dom"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircleIcon, CheckCircle2Icon } from "lucide-react"
+import { AlertCircleIcon } from "lucide-react" 
+import { LoadingOverlay } from "@/components/ui/LoadingOverlay"
 
 type Career = {
   id: string
@@ -28,10 +29,10 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [role, setRole] = useState<Role[]>([])
   const [careerId, setCareerId] = useState('')
-  const [success, setSuccess] = useState(false)
   const [errorAlert, setErrorAlert] = useState(false)
   const [careers, setCareers] = useState<Career[]>([])
   const [validationError, setValidationError] = useState(false)
+  
   const hasMinLength = password.length >= 8;
   const hasNumber = /\d/.test(password);
   const hasUpperCase = /[A-Z]/.test(password);
@@ -52,16 +53,11 @@ const RegisterPage = () => {
     fetchCareers()
 
     const fetchRole = async () => {
-      setLoading(true)
       try {
         const res = await axios.get('http://localhost:8000/api/roles')
-        console.log('Roles obtenidos', res.data.data)
         setRole(res.data.data)
       } catch (error) {
         console.log('Error al obtener roles')
-      }
-      finally {
-        setLoading(false)
       }
     }
     fetchRole()
@@ -71,15 +67,19 @@ const RegisterPage = () => {
     ? role.find(r => r.name === 'TEACHER')?.id
     : "";
 
-  const handleRegister = async () => {
+  // MODIFICADO: Recibe el evento para prevenir recarga
+  const handleRegister = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault() // <--- IMPORTANTE: Previene que la página se recargue al dar Enter
+
     if (!isPasswordValid) {
       setValidationError(true);
       setTimeout(() => setValidationError(false), 3000);
       return; 
     }
 
+    setLoading(true) 
+    
     try {
-      setLoading(true)
       const res = await axios.post('http://localhost:8000/api/users', {
         name,
         email,
@@ -87,22 +87,21 @@ const RegisterPage = () => {
         password,
         careerId
       })
-      setSuccess(true)
       console.log('Usuario registrado', res.data)
-      setTimeout(() => {
-        navigate("/login")
-      }, 3000)
+      
+      // Navegamos inmediatamente al Login
+      navigate("/login")
+
     } catch (error) {
       console.log('Error al intentar crear el usuario')
       setErrorAlert(true)
+      setLoading(false) 
       setTimeout(() => {
         setErrorAlert(false)
       }, 3000)
-
-    } finally {
-      setLoading(false)
     }
   }
+
   const PasswordRequirement = ({ met, text }: { met: boolean, text: string }) => (
     <div className={`flex items-center space-x-2 text-xs ${met ? "text-green-400" : "text-gray-500"}`}>
       {met ? <Check size={14} /> : <div className="w-3.5 h-3.5 rounded-full border border-gray-500" />}
@@ -113,7 +112,8 @@ const RegisterPage = () => {
   return (
     <>
       <div className="flex items-center justify-center min-h-screen bg-gray-900 p-4">
-        <div className="w-full max-w-sm p-8 bg-gray-800 rounded-2xl shadow-lg space-y-6 text-gray-100">
+        {/* MODIFICADO: Cambié el div principal por form y agregué onSubmit */}
+        <form onSubmit={handleRegister} className="w-full max-w-sm p-8 bg-gray-800 rounded-2xl shadow-lg space-y-6 text-gray-100">
           <h1 className="text-xl font-semibold text-center text-white">Registrarse</h1>
           <Label htmlFor="name">Nombre</Label>
           <Input
@@ -171,9 +171,10 @@ const RegisterPage = () => {
           </div>
 
           <Button
+            type="submit" // MODIFICADO: Agregado type="submit" para que el Enter funcione
             className="w-full bg-cyan-600 hover:bg-cyan-500 text-white "
-            onClick={handleRegister}
             disabled={loading}
+            // Quitamos onClick={handleRegister} porque el form onSubmit ya lo maneja
           >
             {loading ? "Cargando..." : "Registrarse"}
           </Button>
@@ -183,20 +184,11 @@ const RegisterPage = () => {
               Iniciar Sesión
             </Link>
           </p>
-        </div>
+        </form>
       </div>
-      {success && (
-        <Alert className="fixed top-4 right-4 w-auto bg-green-700 text-white">
-          <CheckCircle2Icon />
-          <AlertTitle>¡Usuario creado!</AlertTitle>
-          <AlertDescription>
-            El usuario {name} se ha creado correctamente.
-          </AlertDescription>
-        </Alert>
-      )}
 
       {errorAlert && (
-        <Alert className="fixed top-4 right-4 w-auto bg-red-700 text-white border-red-800">
+        <Alert className="fixed top-4 right-4 w-auto bg-red-700 text-white border-red-800 z-[10000]">
           <AlertCircleIcon />
           <AlertTitle>Error al crear usuario</AlertTitle>
           <AlertDescription>
@@ -205,7 +197,7 @@ const RegisterPage = () => {
         </Alert>
       )}
       {validationError && (
-        <Alert className="fixed top-4 right-4 w-auto bg-orange-600 text-white border-orange-700">
+        <Alert className="fixed top-4 right-4 w-auto bg-orange-600 text-white border-orange-700 z-[10000]">
           <AlertCircleIcon />
           <AlertTitle>Contraseña Débil</AlertTitle>
           <AlertDescription>
@@ -213,6 +205,8 @@ const RegisterPage = () => {
           </AlertDescription>
         </Alert>
       )}
+
+      <LoadingOverlay isVisible={loading} message="Creando tu cuenta..." />
     </>
   )
 }
